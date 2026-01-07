@@ -20,6 +20,10 @@ export function setActiveNav(){
 }
 export function makeTable(rows, cols){
   const thead = `<thead><tr>${cols.map(c=>`<th>${escapeHTML(c.label)}</th>`).join('')}</tr></thead>`;
-  const tbody = `<tbody>${rows.map(r=>`<tr>${cols.map(c=>`<td>${c.render ? c.render(r) : escapeHTML(r[c.key] ?? '')}</td>`).join('')}</tr>`).join('')}</tbody>`;
+  const tbody = `<tbody>${
+    rows.map(r=>`<tr>${
+      cols.map(c=>`<td>${escapeHTML(r[c.key] ?? '')}</td>`).join('')
+    }</tr>`).join('')
+  }</tbody>`;
   return `<div class="table-wrap"><table>${thead}${tbody}</table></div>`;
 }

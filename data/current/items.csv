@@ -1,0 +1,4 @@
+item_id,name,category,slot,atk,def,price_buy,price_sell,effect,notes,last_verified
+item_001,やくそう,消耗品,,,,8,4,HPを少し回復,,
+item_002,どうのつるぎ,武器,片手剣,10,,270,135,,,
+item_003,かわのよろい,防具,よろい,,12,70,35,,,
