@@ -12,7 +12,7 @@
     <h1>キャラクター</h1>
 
     <div class="toolbar">
-      <input id="q" class="input" placeholder="検索（名前 / 役割 / メモ）" />
+      <input id="q" class="input" placeholder="検索（名前 / 概要 / メモ）" />
 </div>
 
     <div id="out" style="margin-top:12px;"></div>
@@ -35,8 +35,7 @@ const OUT = qs("#out");
   const cols = [
     { key:"name", label:"名前", render:(r)=> `<a href="./character.html?id=${encodeURIComponent(r.chara_id)}"><b>${escapeHTML(r.name||"")}</b></a><div class="small mono">${escapeHTML(r.chara_id||"")}</div>` },
     { key:"join_chapter", label:"加入" },
-    { key:"role", label:"役割" },
-    { key:"profile_short", label:"概要" },
+        { key:"profile_short", label:"概要" },
     { key:"notes", label:"メモ" }
   ];
 
@@ -47,7 +46,7 @@ const OUT = qs("#out");
     const q = norm(Q.value.trim());
 const filtered = rows.filter(r=>{
 if (!q) return true;
-      const blob = [r.name,r.role,r.profile_short,r.notes,r.join_chapter].join(" ").toLowerCase();
+      const blob = [r.name,r.profile_short,r.notes,r.join_chapter].join(" ").toLowerCase();
       return blob.includes(q);
     });
 
