@@ -42,8 +42,7 @@
   const cols = [
     { key:"name", label:"名前", render:(r)=> `<a href="./boss.html?id=${encodeURIComponent(r.boss_id)}"><b>${escapeHTML(r.name||"")}</b></a><div class="small mono">${escapeHTML(r.boss_id||"")}</div>` },
     { key:"location", label:"場所" },
-    { key:"recommended_level", label:"目安Lv" },
-    { key:"actions_summary", label:"行動ざっくり" },
+        { key:"actions_summary", label:"行動ざっくり" },
     { key:"notes", label:"メモ" }
   ];
 

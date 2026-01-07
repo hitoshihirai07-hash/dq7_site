@@ -24,7 +24,22 @@
   const id = getParam("id") || "";
   const WRAP = document.getElementById("wrap");
 
-  const VALUE_LABEL = {
+    const save = ()=>{
+      const obj = {
+        hp: hp.value.trim(),
+        atk: atk.value.trim(),
+        def: de.value.trim(),
+        agi: agi.value.trim()
+      };
+      localStorage.setItem(STORAGE_KEY(bid), JSON.stringify(obj));
+    };
+
+    [hp, atk, de, agi].forEach(el=>{
+      el.addEventListener("input", save);
+      el.addEventListener("change", save);
+    });
+  }
+const VALUE_LABEL = {
     weak: "弱点",
     normal: "等倍",
     half: "半減",
@@ -108,9 +123,16 @@
         <div class="small mono">${escapeHTML(boss.boss_id || "")}</div>
         <p>
           <b>場所：</b>${escapeHTML(boss.location || "")}<br>
-          <b>目安Lv：</b>${escapeHTML(boss.recommended_level || "")}<br>
           <b>フェーズ：</b>${escapeHTML(boss.phase_count || "")}
         </p>
+        <p><b>ステータス</b><br>
+          HP：${escapeHTML(boss.hp || "")}　
+          攻撃：${escapeHTML(boss.atk || "")}　
+          防御：${escapeHTML(boss.def || "")}　
+          素早さ：${escapeHTML(boss.agi || "")}
+        </p>
+</div>
+
         <p><b>行動ざっくり</b><br>${escapeHTML(boss.actions_summary || "")}</p>
         <p><b>ドロップ</b><br>${escapeHTML(boss.drop_items || "")}</p>
         <p><b>経験値/ゴールド</b><br>${escapeHTML(boss.exp || "")} / ${escapeHTML(boss.gold || "")}</p>
