@@ -22,48 +22,100 @@
 <footer>
   <div class="small"> </div>
 </footer>
+
 <script type="module">
   import { boot } from "./assets/app_common.js";
   import { loadCSV } from "./assets/data.js";
-  import { qs, escapeHTML, makeTable } from "./assets/util.js";
+  import { qs, escapeHTML } from "./assets/util.js";
 
   boot("ストーリー | DQ7R");
 
   const Q = qs("#q");
-const OUT = qs("#out");
+  const OUT = qs("#out");
 
-  const cols = [
-    { key:"chapter", label:"章" },
+  const COLS = [
     { key:"step_no", label:"手順" },
     { key:"location", label:"場所" },
     { key:"objective", label:"目的" },
     { key:"required_items", label:"必要" },
     { key:"obtained_items", label:"入手" },
-    { key:"boss_id", label:"ボス", render:(r)=> r.boss_id ? `<a href="./boss.html?id=${encodeURIComponent(r.boss_id)}">${escapeHTML(r.boss_id)}</a>` : "" },
-    { key:"notes", label:"メモ" }
+    { key:"boss_id", label:"ボス" },
+    { key:"notes", label:"メモ" },
   ];
 
   function norm(s){ return (s||"").toLowerCase(); }
 
+  function makeTable(rows){
+    const thead = `<thead><tr>${COLS.map(c=>`<th>${escapeHTML(c.label)}</th>`).join("")}</tr></thead>`;
+    const tbody = `<tbody>${rows.map(r=>{
+      return `<tr>${COLS.map(c=>{
+        if (c.key === "boss_id"){
+          const bid = (r.boss_id || "").trim();
+          if (!bid) return `<td></td>`;
+          return `<td><a href="./boss.html?id=${encodeURIComponent(bid)}">${escapeHTML(bid)}</a></td>`;
+        }
+        return `<td>${escapeHTML(r[c.key] ?? "")}</td>`;
+      }).join("")}</tr>`;
+    }).join("")}</tbody>`;
+    return `<div class="table-wrap"><table>${thead}${tbody}</table></div>`;
+  }
+
+  function groupByChapter(rows){
+    const m = new Map();
+    for (const r of rows){
+      const chap = (r.chapter || "（未分類）").trim() || "（未分類）";
+      if (!m.has(chap)) m.set(chap, []);
+      m.get(chap).push(r);
+    }
+    // sort rows inside each chapter by step_no
+    for (const [k, arr] of m.entries()){
+      arr.sort((a,b)=> Number(a.step_no||0) - Number(b.step_no||0));
+    }
+    // stable order by chapter name
+    return Array.from(m.entries()).sort((a,b)=> a[0].localeCompare(b[0], "ja"));
+  }
+
   async function render(){
     const rows = await loadCSV("./data/current/story_steps.csv");
     const q = norm(Q.value.trim());
-const filtered = rows.filter(r=>{
-if (!q) return true;
-      const blob = [r.chapter,r.location,r.objective,r.notes,r.required_items,r.obtained_items].join(" ").toLowerCase();
+
+    const filtered = rows.filter(r=>{
+      if (!q) return true;
+      const blob = [r.chapter,r.location,r.objective,r.notes,r.required_items,r.obtained_items,r.boss_id,r.step_no].join(" ").toLowerCase();
       return blob.includes(q);
-    }).sort((a,b)=>{
-      const ca = (a.chapter||"");
-      const cb = (b.chapter||"");
-      if (ca !== cb) return ca.localeCompare(cb, "ja");
-      return Number(a.step_no||0) - Number(b.step_no||0);
     });
 
-    OUT.innerHTML = makeTable(filtered, cols) + `<div class="small" style="margin-top:8px;">件数: ${filtered.length}</div>`;
+    const grouped = groupByChapter(filtered);
+
+    // Build chapter quick list (optional but compact)
+    const quick = grouped.length
+      ? `<div class="toolbar" style="margin:10px 0 12px;">
+           <span class="small">章ジャンプ：</span>
+           ${grouped.map(([chap, arr], i)=>`<a class="chip" href="#chap_${i}">${escapeHTML(chap)} (${arr.length})</a>`).join(" ")}
+         </div>`
+      : "";
+
+    const blocks = grouped.map(([chap, arr], i)=>{
+      const openAttr = (!q && i === 0) ? " open" : (q ? " open" : "");
+      return `
+        <details class="card" id="chap_${i}"${openAttr} style="padding:12px;">
+          <summary style="cursor:pointer; font-weight:800;">
+            ${escapeHTML(chap)} <span class="small">(${arr.length})</span>
+          </summary>
+          <div style="margin-top:10px;">
+            ${makeTable(arr)}
+          </div>
+        </details>
+      `;
+    }).join("");
+
+    OUT.innerHTML = `${quick}${blocks || `<div class="warn">該当データがありません。</div>`}
+      <div class="small" style="margin-top:10px;">件数: ${filtered.length}</div>`;
   }
 
   Q.addEventListener("input", render);
-render();
+  render();
 </script>
+
 </body>
 </html>
