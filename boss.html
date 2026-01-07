@@ -14,32 +14,18 @@
 <footer>
   <div class="small"> </div>
 </footer>
+
 <script type="module">
   import { boot } from "./assets/app_common.js";
   import { loadCSV, byId } from "./assets/data.js";
-  import { getParam, escapeHTML, qs } from "./assets/util.js";
+  import { getParam, escapeHTML } from "./assets/util.js";
 
   boot("ボス詳細 | DQ7R");
 
   const id = getParam("id") || "";
   const WRAP = document.getElementById("wrap");
 
-    const save = ()=>{
-      const obj = {
-        hp: hp.value.trim(),
-        atk: atk.value.trim(),
-        def: de.value.trim(),
-        agi: agi.value.trim()
-      };
-      localStorage.setItem(STORAGE_KEY(bid), JSON.stringify(obj));
-    };
-
-    [hp, atk, de, agi].forEach(el=>{
-      el.addEventListener("input", save);
-      el.addEventListener("change", save);
-    });
-  }
-const VALUE_LABEL = {
+  const VALUE_LABEL = {
     weak: "弱点",
     normal: "等倍",
     half: "半減",
@@ -59,45 +45,53 @@ const VALUE_LABEL = {
 
   function renderResists(resistTypes, bossResists){
     const typeById = new Map(resistTypes.map(t=>[t.resist_type_id, t]));
+
     const enriched = bossResists.map(r=>{
-      const t = typeById.get(r.resist_type_id);
+      const t = typeById.get(r.resist_type_id) || {};
       return {
-        category: t?.category || "その他",
-        name: t?.name || r.resist_type_id,
-        short: t?.short || "",
-        sort: Number(t?.sort_order || 9999),
-        value: r.value || "",
+        category: t.category || "その他",
+        name: t.name || r.resist_type_id,
+        sort: Number(t.sort_order || 9999),
+        value: (r.value || "").toLowerCase(),
         notes: r.notes || ""
       };
-    }).sort((a,b)=> a.category.localeCompare(b.category,"ja") || a.sort - b.sort || a.name.localeCompare(b.name,"ja"));
+    }).sort((a,b)=>
+      a.category.localeCompare(b.category,"ja") ||
+      a.sort - b.sort ||
+      a.name.localeCompare(b.name,"ja")
+    );
+
+    if (!enriched.length){
+      return `<div class="card"><div class="warn">耐性データがまだありません。</div></div>`;
+    }
 
     const grouped = groupBy(enriched, "category");
     let html = "";
 
     for (const [cat, items] of grouped.entries()){
-      html += `<div class="card"><h2>${escapeHTML(cat)}</h2>`;
-      html += `<div class="table-wrap"><table>
-        <thead><tr><th>種別</th><th>耐性</th><th>メモ</th></tr></thead>
-        <tbody>
-          ${items.map(it=>{
-            const v = (it.value || "").toLowerCase();
-            const label = VALUE_LABEL[v] || it.value || "";
-            return `<tr>
-              <td>${escapeHTML(it.name)}</td>
-              <td><span class="chip">${escapeHTML(label)}</span></td>
-              <td>${escapeHTML(it.notes)}</td>
-            </tr>`;
-          }).join("")}
-        </tbody>
-      </table></div>`;
-      html += `</div>`;
+      html += `<div class="card">
+        <h2>${escapeHTML(cat)}</h2>
+        <div class="table-wrap"><table>
+          <thead><tr><th>種別</th><th>耐性</th><th>メモ</th></tr></thead>
+          <tbody>
+            ${items.map(it=>{
+              const label = VALUE_LABEL[it.value] || it.value || "";
+              return `<tr>
+                <td>${escapeHTML(it.name)}</td>
+                <td><span class="chip">${escapeHTML(label)}</span></td>
+                <td>${escapeHTML(it.notes)}</td>
+              </tr>`;
+            }).join("")}
+          </tbody>
+        </table></div>
+      </div>`;
     }
-    return html || `<div class="card"><div class="warn">耐性データがまだありません。</div></div>`;
+    return html;
   }
 
   async function main(){
     if (!id){
-      WRAP.innerHTML = `<div class="card"><h1>ボス詳細</h1><div class="warn">URLに <span class="mono">?id=boss_001</span> のように指定してください。</div></div>`;
+      WRAP.innerHTML = `<div class="card"><h1>ボス詳細</h1><div class="warn">URLに <span class="mono">?id=boss_001</span> のように指定してください。</div><p><a href="./bosses.html">← ボス一覧へ</a></p></div>`;
       return;
     }
 
@@ -109,7 +103,7 @@ const VALUE_LABEL = {
 
     const boss = byId(bosses, "boss_id", id);
     if (!boss){
-      WRAP.innerHTML = `<div class="card"><h1>ボス詳細</h1><div class="warn">boss_id=${escapeHTML(id)} が見つかりません。</div><p><a href="./bosses.html">← ボス一覧へ</a></p></div>`;
+      WRAP.innerHTML = `<div class="card"><h1>ボス詳細</h1><div class="warn">id=${escapeHTML(id)} が見つかりません。</div><p><a href="./bosses.html">← ボス一覧へ</a></p></div>`;
       return;
     }
 
@@ -121,33 +115,35 @@ const VALUE_LABEL = {
       <section class="card">
         <h1>${escapeHTML(boss.name || "")}</h1>
         <div class="small mono">${escapeHTML(boss.boss_id || "")}</div>
+
         <p>
           <b>場所：</b>${escapeHTML(boss.location || "")}<br>
           <b>フェーズ：</b>${escapeHTML(boss.phase_count || "")}
         </p>
+
         <p><b>ステータス</b><br>
           HP：${escapeHTML(boss.hp || "")}　
           攻撃：${escapeHTML(boss.atk || "")}　
           防御：${escapeHTML(boss.def || "")}　
           素早さ：${escapeHTML(boss.agi || "")}
         </p>
-</div>
 
         <p><b>行動ざっくり</b><br>${escapeHTML(boss.actions_summary || "")}</p>
         <p><b>ドロップ</b><br>${escapeHTML(boss.drop_items || "")}</p>
         <p><b>経験値/ゴールド</b><br>${escapeHTML(boss.exp || "")} / ${escapeHTML(boss.gold || "")}</p>
         <p><b>メモ</b><br>${escapeHTML(boss.notes || "")}</p>
+
         <p class="small"><a href="./bosses.html">← ボス一覧へ戻る</a></p>
       </section>
     `;
 
-    const right = renderResists(resistTypes, resists);
+    const right = `<section class="grid">${renderResists(resistTypes, resists)}</section>`;
 
-    WRAP.innerHTML = left + `<section class="grid">${right}</section>`;
+    WRAP.innerHTML = left + right;
   }
 
   main().catch(err=>{
-    WRAP.innerHTML = `<div class="card"><h1>ボス詳細</h1><div class="warn">${escapeHTML(err.message || String(err))}</div></div>`;
+    WRAP.innerHTML = `<div class="card"><h1>ボス詳細</h1><div class="warn">${escapeHTML(err.message || String(err))}</div><p><a href="./bosses.html">← ボス一覧へ</a></p></div>`;
   });
 </script>
 </body>
