@@ -1,6 +1,6 @@
 import { setActiveNav, escapeHTML } from "./util.js";
 
-export function renderHeader({title="DQ7R データベース", subtitle="", active=""} = {}){
+export function renderHeader({title="DQ7R データベース", subtitle=""} = {}){
   const header = document.createElement('header');
 
   const subHtml = subtitle ? `<div class="sub">${escapeHTML(subtitle)}</div>` : ``;
@@ -14,23 +14,15 @@ export function renderHeader({title="DQ7R データベース", subtitle="", acti
           ${subHtml}
         </div>
       </div>
-
-      <nav class="nav">
-        <div class="nav-group">
-          <div class="nav-label">ストーリー</div>
-          <a href="./index.html">トップ</a>
-          <a href="./story.html">ストーリー</a>
-          <a href="./bosses.html">ボス</a>
-        </div>
-
-        <div class="nav-group">
-          <div class="nav-label">データ</div>
-          <a href="./characters.html">キャラクター</a>
-          <a href="./jobs.html">職業</a>
-          <a href="./items.html">アイテム</a>
-          <a href="./spells.html">呪文</a>
-          <a href="./skills.html">特技</a>
-        </div>
+      <nav>
+        <a href="./index.html">トップ</a>
+        <a href="./story.html">ストーリー</a>
+        <a href="./bosses.html">ボス</a>
+        <a href="./characters.html">キャラクター</a>
+        <a href="./jobs.html">職業</a>
+        <a href="./items.html">アイテム</a>
+        <a href="./spells.html">呪文</a>
+        <a href="./skills.html">特技</a>
       </nav>
     </div>
   `;

@@ -135,6 +135,30 @@ select{width:auto}
   background:#fff;
   cursor:pointer;
 }
+.home-grid{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap:14px;
+  margin-top:14px;
+}
+.btn-lg{
+  padding:18px 16px;
+  font-size:22px;
+}
+.btn-wide{
+  grid-column: span 1;
+}
+.home-grid .btn:nth-child(3),
+.home-grid .btn:nth-child(4),
+.home-grid .btn:nth-child(5){
+  padding:16px 14px;
+  font-size:22px;
+}
+@media (max-width: 720px){
+  .home-grid{ grid-template-columns: 1fr; }
+  .btn-wide{ grid-column: auto; }
+}
+
 .btn:hover{border-color:var(--accent2)}
 .kbd{
   font-family:var(--mono);
