@@ -98,7 +98,7 @@
 
         <p><b>メモ</b><br>${escapeHTML(s.notes || "")}</p>
 
-        <p class="small"><a href="./skills.html">← 呪文・特技一覧へ戻る</a></p>
+        <p class="small"><a href="${(s.type||\"\").trim()===\"呪文\" ? \"./spells.html\" : \"./skills.html\"}">← 一覧へ戻る</a></p>
       </section>
     `;
 

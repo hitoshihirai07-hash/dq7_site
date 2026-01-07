@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="./assets/style.css" />
-  <title>特技</title>
+  <title>呪文</title>
 
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./assets/icon-192.png" />
@@ -14,10 +14,10 @@
 <body>
 <main>
   <section class="card">
-    <h1>特技</h1>
+    <h1>呪文</h1>
     <div class="toolbar">
       <input id="q" class="input" placeholder="検索（名前 / メモ）" />
-<select id="el" class="select">
+      <select id="el" class="select">
         <option value="all">属性: 全て</option>
       </select>
     </div>
@@ -32,18 +32,20 @@
   import { loadCSV } from "./assets/data.js";
   import { qs, escapeHTML } from "./assets/util.js";
 
-  boot("特技 | DQ7R");
+  boot("呪文 | DQ7R");
 
-  const Q = qs("#q");  const EL = qs("#el");
+  const Q = qs("#q");
+  const EL = qs("#el");
   const OUT = qs("#out");
 
   const COLS = [
     { key:"name", label:"名称" },
-        { key:"element", label:"属性" },
+    { key:"element", label:"属性" },
     { key:"target", label:"対象" },
     { key:"power", label:"効果量" },
     { key:"hit", label:"回数/命中" },
-    { key:"notes", label:"メモ" }];
+    { key:"notes", label:"メモ" },
+  ];
 
   function norm(s){ return (s||"").toLowerCase(); }
 
@@ -64,15 +66,18 @@
 
   async function main(){
     const all = await loadCSV("./data/current/skills.csv");
-    const skills = all.filter(r => (||"").trim() === "特技");
-const els = Array.from(new Set(skills.map(r=>(r.element||"").trim()).filter(Boolean)))
+    const spells = all.filter(r => (r.type||"").trim() === "呪文");
+
+    const els = Array.from(new Set(spells.map(r=>(r.element||"").trim()).filter(Boolean)))
       .sort((a,b)=>a.localeCompare(b,"ja"));
     EL.innerHTML = `<option value="all">属性: 全て</option>` + els.map(e=>`<option value="${escapeHTML(e)}">${escapeHTML(e)}</option>`).join("");
 
     function render(){
-      const q = norm(Q.value.trim());      const el = EL.value;
+      const q = norm(Q.value.trim());
+      const el = EL.value;
 
-      const filtered = skills.filter(r=>{        if (el !== "all" && (r.element||"").trim() !== el) return false;
+      const filtered = spells.filter(r=>{
+        if (el !== "all" && (r.element||"").trim() !== el) return false;
         if (!q) return true;
         const blob = [r.name,r.notes,r.element,r.target].join(" ").toLowerCase();
         return blob.includes(q);
@@ -82,7 +87,8 @@ const els = Array.from(new Set(skills.map(r=>(r.element||"").trim()).filter(Bool
         <div class="small" style="margin-top:10px;">件数: ${filtered.length}</div>`;
     }
 
-    Q.addEventListener("input", render);    EL.addEventListener("change", render);
+    Q.addEventListener("input", render);
+    EL.addEventListener("change", render);
     render();
   }
 
