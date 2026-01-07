@@ -1,12 +1,18 @@
 import { setActiveNav, escapeHTML } from "./util.js";
 
-export function renderHeader({title="DQ7R データベース（雛形）", subtitle="CSV差し替えで更新できる最小構成", active=""} = {}){
+export function renderHeader({title="DQ7R データベース", subtitle="", active=""} = {}){
   const header = document.createElement('header');
+
+  const subHtml = subtitle ? `<div class="sub">${escapeHTML(subtitle)}</div>` : ``;
+
   header.innerHTML = `
     <div class="header-inner">
       <div class="brand">
-        <div class="title">${escapeHTML(title)}</div>
-        <div class="sub">${escapeHTML(subtitle)}</div>
+        <img class="brand-icon" src="./assets/icon.svg" alt="" width="32" height="32">
+        <div class="brand-text">
+          <div class="title">${escapeHTML(title)}</div>
+          ${subHtml}
+        </div>
       </div>
       <nav>
         <a href="./index.html">トップ</a>
