@@ -64,7 +64,7 @@
 
   async function main(){
     const all = await loadCSV("./data/current/skills.csv");
-    const skills = all.filter(r => (||"").trim() === "特技");
+    const skills = all.filter(r => (r.type||"").trim() === "特技");
 const els = Array.from(new Set(skills.map(r=>(r.element||"").trim()).filter(Boolean)))
       .sort((a,b)=>a.localeCompare(b,"ja"));
     EL.innerHTML = `<option value="all">属性: 全て</option>` + els.map(e=>`<option value="${escapeHTML(e)}">${escapeHTML(e)}</option>`).join("");
