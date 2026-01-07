@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="./assets/style.css" />
+  <title>職業</title>
+</head>
+<body>
+<main>
+  <div class="card">
+    <h1>職業</h1>
+    <p>職業一覧。個別ページで特技（習得）を表示します。</p>
+
+    <div class="toolbar">
+      <input id="q" class="input" placeholder="検索（名前 / 解放条件 / メモ）" />
+      <select id="group">
+        <option value="all">グループ：すべて</option>
+      </select>
+      <select id="spoiler">
+        <option value="all">ネタバレ：すべて</option>
+        <option value="0">ネタバレ：Lv0のみ</option>
+        <option value="1">ネタバレ：Lv1まで</option>
+        <option value="2">ネタバレ：Lv2まで</option>
+      </select>
+    </div>
+
+    <div id="out" style="margin-top:12px;"></div>
+  </div>
+</main>
+
+<footer>
+  <div class="small">CSV: <span class="mono">data/current/jobs.csv</span></div>
+</footer>
+
+<script type="module">
+  import { boot } from "./assets/app_common.js";
+  import { loadCSV } from "./assets/data.js";
+  import { qs, escapeHTML, makeTable } from "./assets/util.js";
+
+  boot("職業 | DQ7R");
+
+  const Q = qs("#q");
+  const G = qs("#group");
+  const S = qs("#spoiler");
+  const OUT = qs("#out");
+
+  const cols = [
+    { key:"name", label:"職業", render:(r)=> `<a href="./job.html?id=${encodeURIComponent(r.job_id)}"><b>${escapeHTML(r.name||"")}</b></a><div class="small mono">${escapeHTML(r.job_id||"")}</div>` },
+    { key:"group", label:"分類" },
+    { key:"unlock_condition", label:"解放条件" },
+    { key:"job_traits", label:"職業とくせい" },
+    { key:"notes", label:"メモ" }
+  ];
+
+  function norm(s){ return (s||"").toLowerCase(); }
+
+  async function render(){
+    const rows = await loadCSV("./data/current/jobs.csv");
+
+    // populate group options once
+    if (G.options.length <= 1){
+      const groups = Array.from(new Set(rows.map(r=>(r.group||"").trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b,"ja"));
+      for (const g of groups){
+        const opt = document.createElement("option");
+        opt.value = g; opt.textContent = `グループ：${g}`;
+        G.appendChild(opt);
+      }
+    }
+
+    const q = norm(Q.value.trim());
+    const grp = G.value;
+    const sp = S.value;
+
+    const filtered = rows.filter(r=>{
+      const sl = (r.spoiler_level || "0").trim();
+      if (sp !== "all" && Number(sl) > Number(sp)) return false;
+      if (grp !== "all" && (r.group||"") !== grp) return false;
+      if (!q) return true;
+      const blob = [r.job_id,r.name,r.group,r.unlock_condition,r.job_traits,r.notes].join(" ").toLowerCase();
+      return blob.includes(q);
+    });
+
+    OUT.innerHTML = makeTable(filtered, cols) + `<div class="small" style="margin-top:8px;">件数: ${filtered.length}</div>`;
+  }
+
+  Q.addEventListener("input", render);
+  G.addEventListener("change", render);
+  S.addEventListener("change", render);
+  render();
+</script>
+</body>
+</html>

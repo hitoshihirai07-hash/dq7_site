@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="./assets/style.css" />
+  <title>ストーリー</title>
+</head>
+<body>
+<main>
+  <div class="card">
+    <h1>ストーリー</h1>
+    <p>チャートを「章→手順」で一覧表示します。CSVを更新するだけで反映されます。</p>
+
+    <div class="toolbar">
+      <input id="q" class="input" placeholder="検索（章 / 場所 / 目的 / メモ）" />
+      <select id="spoiler">
+        <option value="all">ネタバレ：すべて</option>
+        <option value="0">ネタバレ：Lv0のみ</option>
+        <option value="1">ネタバレ：Lv1まで</option>
+        <option value="2">ネタバレ：Lv2まで</option>
+      </select>
+    </div>
+
+    <div id="out" style="margin-top:12px;"></div>
+  </div>
+</main>
+
+<footer>
+  <div class="small">CSV: <span class="mono">data/current/story_steps.csv</span></div>
+</footer>
+
+<script type="module">
+  import { boot } from "./assets/app_common.js";
+  import { loadCSV } from "./assets/data.js";
+  import { qs, escapeHTML, makeTable } from "./assets/util.js";
+
+  boot("ストーリー | DQ7R");
+
+  const Q = qs("#q");
+  const S = qs("#spoiler");
+  const OUT = qs("#out");
+
+  const cols = [
+    { key:"chapter", label:"章" },
+    { key:"step_no", label:"手順" },
+    { key:"location", label:"場所" },
+    { key:"objective", label:"目的" },
+    { key:"required_items", label:"必要" },
+    { key:"obtained_items", label:"入手" },
+    { key:"boss_id", label:"ボス", render:(r)=> r.boss_id ? `<a href="./boss.html?id=${encodeURIComponent(r.boss_id)}">${escapeHTML(r.boss_id)}</a>` : "" },
+    { key:"notes", label:"メモ" }
+  ];
+
+  function norm(s){ return (s||"").toLowerCase(); }
+
+  async function render(){
+    const rows = await loadCSV("./data/current/story_steps.csv");
+    const q = norm(Q.value.trim());
+    const sp = S.value;
+
+    const filtered = rows.filter(r=>{
+      const sl = (r.spoiler_level || "0").trim();
+      if (sp !== "all" && Number(sl) > Number(sp)) return false;
+      if (!q) return true;
+      const blob = [r.chapter,r.location,r.objective,r.notes,r.required_items,r.obtained_items].join(" ").toLowerCase();
+      return blob.includes(q);
+    }).sort((a,b)=>{
+      const ca = (a.chapter||"");
+      const cb = (b.chapter||"");
+      if (ca !== cb) return ca.localeCompare(cb, "ja");
+      return Number(a.step_no||0) - Number(b.step_no||0);
+    });
+
+    OUT.innerHTML = makeTable(filtered, cols) + `<div class="small" style="margin-top:8px;">件数: ${filtered.length}</div>`;
+  }
+
+  Q.addEventListener("input", render);
+  S.addEventListener("change", render);
+  render();
+</script>
+</body>
+</html>

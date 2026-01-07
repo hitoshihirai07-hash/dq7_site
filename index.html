@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="./assets/style.css" />
+  <title>DQ7R データベース（雛形）</title>
+</head>
+<body>
+<main>
+  <div class="grid two">
+    <section class="card">
+      <h1>DQ7R データベース（雛形）</h1>
+      <p>
+        これは「CSVを差し替えるだけで更新できる」静的サイトの雛形です。<br>
+        公開時は <span class="mono">data/current/</span> のCSVを更新してください。
+      </p>
+
+      <div class="toolbar">
+        <a class="btn" href="./story.html">ストーリー</a>
+        <a class="btn" href="./characters.html">キャラクター</a>
+        <a class="btn" href="./bosses.html">ボス</a>
+        <a class="btn" href="./jobs.html">職業</a>
+      </div>
+
+      <p class="small">
+        ※ローカル（file://）で直接開くとfetchが動かないため、GitHub Pages / Cloudflare Pages などで確認してください。
+      </p>
+    </section>
+
+    <aside class="card">
+      <h2>更新メモ（運用のコツ）</h2>
+      <ul>
+        <li>列（ヘッダー）は消さずに増やす</li>
+        <li>IDは固定：名前が変わってもIDは変えない</li>
+        <li>公開で読むのは <span class="mono">data/current/</span> のみ（差分管理は裏でOK）</li>
+      </ul>
+      <div class="warn">
+        <b>CSV読込エラーが出る場合</b><br>
+        パスとファイル名が一致しているか、CSVの1行目（ヘッダー）が壊れていないかを確認してください。
+      </div>
+    </aside>
+  </div>
+</main>
+
+<footer>
+  <div>Generated template • static HTML/JS/CSS + CSV</div>
+</footer>
+
+<script type="module">
+  import { boot } from "./assets/app_common.js";
+  boot("DQ7R データベース（雛形）");
+</script>
+</body>
+</html>
