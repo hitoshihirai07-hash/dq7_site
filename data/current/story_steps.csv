@@ -1,2 +1,2 @@
-story_id,chapter,step_no,location,objective,required_items,obtained_items,boss_id,unlock,notes,spoiler_level,last_verified
-st_001,序盤,10,サンプル村,イベント確認,,,boss_001,,メモ例,0,2026-01-07
+story_id,chapter,step_no,location,objective,required_items,obtained_items,boss_id,unlock,notes,last_verified
+st_001,序盤,10,サンプル村,イベント確認,,,boss_001,,メモ例,2026-01-07

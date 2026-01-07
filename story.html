@@ -13,13 +13,7 @@
 
     <div class="toolbar">
       <input id="q" class="input" placeholder="検索（章 / 場所 / 目的 / メモ）" />
-      <select id="spoiler">
-        <option value="all">ネタバレ：すべて</option>
-        <option value="0">ネタバレ：Lv0のみ</option>
-        <option value="1">ネタバレ：Lv1まで</option>
-        <option value="2">ネタバレ：Lv2まで</option>
-      </select>
-    </div>
+</div>
 
     <div id="out" style="margin-top:12px;"></div>
   </div>
@@ -36,8 +30,7 @@
   boot("ストーリー | DQ7R");
 
   const Q = qs("#q");
-  const S = qs("#spoiler");
-  const OUT = qs("#out");
+const OUT = qs("#out");
 
   const cols = [
     { key:"chapter", label:"章" },
@@ -55,12 +48,8 @@
   async function render(){
     const rows = await loadCSV("./data/current/story_steps.csv");
     const q = norm(Q.value.trim());
-    const sp = S.value;
-
-    const filtered = rows.filter(r=>{
-      const sl = (r.spoiler_level || "0").trim();
-      if (sp !== "all" && Number(sl) > Number(sp)) return false;
-      if (!q) return true;
+const filtered = rows.filter(r=>{
+if (!q) return true;
       const blob = [r.chapter,r.location,r.objective,r.notes,r.required_items,r.obtained_items].join(" ").toLowerCase();
       return blob.includes(q);
     }).sort((a,b)=>{
@@ -74,8 +63,7 @@
   }
 
   Q.addEventListener("input", render);
-  S.addEventListener("change", render);
-  render();
+render();
 </script>
 </body>
 </html>

@@ -13,13 +13,7 @@
 
     <div class="toolbar">
       <input id="q" class="input" placeholder="検索（名前 / 役割 / メモ）" />
-      <select id="spoiler">
-        <option value="all">ネタバレ：すべて</option>
-        <option value="0">ネタバレ：Lv0のみ</option>
-        <option value="1">ネタバレ：Lv1まで</option>
-        <option value="2">ネタバレ：Lv2まで</option>
-      </select>
-    </div>
+</div>
 
     <div id="out" style="margin-top:12px;"></div>
   </div>
@@ -36,8 +30,7 @@
   boot("キャラクター | DQ7R");
 
   const Q = qs("#q");
-  const S = qs("#spoiler");
-  const OUT = qs("#out");
+const OUT = qs("#out");
 
   const cols = [
     { key:"name", label:"名前", render:(r)=> `<a href="./character.html?id=${encodeURIComponent(r.chara_id)}"><b>${escapeHTML(r.name||"")}</b></a><div class="small mono">${escapeHTML(r.chara_id||"")}</div>` },
@@ -52,12 +45,8 @@
   async function render(){
     const rows = await loadCSV("./data/current/characters.csv");
     const q = norm(Q.value.trim());
-    const sp = S.value;
-
-    const filtered = rows.filter(r=>{
-      const sl = (r.spoiler_level || "0").trim();
-      if (sp !== "all" && Number(sl) > Number(sp)) return false;
-      if (!q) return true;
+const filtered = rows.filter(r=>{
+if (!q) return true;
       const blob = [r.name,r.role,r.profile_short,r.notes,r.join_chapter].join(" ").toLowerCase();
       return blob.includes(q);
     });
@@ -66,8 +55,7 @@
   }
 
   Q.addEventListener("input", render);
-  S.addEventListener("change", render);
-  render();
+render();
 </script>
 </body>
 </html>

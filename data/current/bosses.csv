@@ -1,2 +1,2 @@
-boss_id,name,location,story_id,phase_count,hp,atk,def,agi,actions_summary,drop_items,exp,gold,notes,spoiler_level,last_verified
-boss_001,サンプルボス,サンプル地方,st_001,1,120,35,18,12,通常攻撃/特技,,,,メモ例,0,2026-01-07
+boss_id,name,location,story_id,phase_count,hp,atk,def,agi,actions_summary,drop_items,exp,gold,notes,last_verified
+boss_001,サンプルボス,サンプル地方,st_001,1,120,35,18,12,通常攻撃/特技,,,,メモ例,2026-01-07

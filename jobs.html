@@ -16,13 +16,7 @@
       <select id="group">
         <option value="all">グループ：すべて</option>
       </select>
-      <select id="spoiler">
-        <option value="all">ネタバレ：すべて</option>
-        <option value="0">ネタバレ：Lv0のみ</option>
-        <option value="1">ネタバレ：Lv1まで</option>
-        <option value="2">ネタバレ：Lv2まで</option>
-      </select>
-    </div>
+</div>
 
     <div id="out" style="margin-top:12px;"></div>
   </div>
@@ -40,8 +34,7 @@
 
   const Q = qs("#q");
   const G = qs("#group");
-  const S = qs("#spoiler");
-  const OUT = qs("#out");
+const OUT = qs("#out");
 
   const cols = [
     { key:"name", label:"職業", render:(r)=> `<a href="./job.html?id=${encodeURIComponent(r.job_id)}"><b>${escapeHTML(r.name||"")}</b></a><div class="small mono">${escapeHTML(r.job_id||"")}</div>` },
@@ -68,12 +61,8 @@
 
     const q = norm(Q.value.trim());
     const grp = G.value;
-    const sp = S.value;
-
-    const filtered = rows.filter(r=>{
-      const sl = (r.spoiler_level || "0").trim();
-      if (sp !== "all" && Number(sl) > Number(sp)) return false;
-      if (grp !== "all" && (r.group||"") !== grp) return false;
+const filtered = rows.filter(r=>{
+if (grp !== "all" && (r.group||"") !== grp) return false;
       if (!q) return true;
       const blob = [r.job_id,r.name,r.group,r.unlock_condition,r.job_traits,r.notes].join(" ").toLowerCase();
       return blob.includes(q);
@@ -84,8 +73,7 @@
 
   Q.addEventListener("input", render);
   G.addEventListener("change", render);
-  S.addEventListener("change", render);
-  render();
+render();
 </script>
 </body>
 </html>
