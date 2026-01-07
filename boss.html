@@ -12,14 +12,8 @@
 </main>
 
 <footer>
-  <div class="small">
-    CSV:
-    <span class="mono">bosses.csv</span> /
-    <span class="mono">resist_types.csv</span> /
-    <span class="mono">boss_resists.csv</span>
-  </div>
+  <div class="small"> </div>
 </footer>
-
 <script type="module">
   import { boot } from "./assets/app_common.js";
   import { loadCSV, byId } from "./assets/data.js";
@@ -83,7 +77,7 @@
       </table></div>`;
       html += `</div>`;
     }
-    return html || `<div class="card"><div class="warn">耐性データ（boss_resists.csv）がまだありません。</div></div>`;
+    return html || `<div class="card"><div class="warn">耐性データがまだありません。</div></div>`;
   }
 
   async function main(){

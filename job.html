@@ -12,14 +12,8 @@
 </main>
 
 <footer>
-  <div class="small">
-    CSV:
-    <span class="mono">jobs.csv</span> /
-    <span class="mono">skills.csv</span> /
-    <span class="mono">job_skills.csv</span>
-  </div>
+  <div class="small"> </div>
 </footer>
-
 <script type="module">
   import { boot } from "./assets/app_common.js";
   import { loadCSV, byId } from "./assets/data.js";
@@ -91,7 +85,7 @@
     const right = `
       <section class="card">
         <h2>習得（特技/呪文）</h2>
-        ${learns.length ? makeTable(learns, cols) : `<div class="warn">習得データ（job_skills.csv）がまだありません。</div>`}
+        ${learns.length ? makeTable(learns, cols) : `<div class="warn">習得データがまだありません。</div>`}
       </section>
     `;
 

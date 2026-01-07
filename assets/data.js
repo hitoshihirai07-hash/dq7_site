@@ -6,7 +6,7 @@ export async function loadCSV(path) {
   if (cache.has(path)) return cache.get(path);
   const p = fetch(path, { cache: "no-store" })
     .then(async (res) => {
-      if (!res.ok) throw new Error(`CSV読込失敗: ${path} (${res.status})`);
+      if (!res.ok) throw new Error(`データ読込失敗: ${path} (${res.status})`);
       const txt = await res.text();
       return parseCSV(txt);
     });
