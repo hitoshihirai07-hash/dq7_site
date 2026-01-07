@@ -7,3 +7,5 @@
 - 詳細：`boss.html?id=...` / `job.html?id=...`
 
 データは `data/current/` を差し替えて更新する想定です。
+
+- 詳細：`character.html?id=...`

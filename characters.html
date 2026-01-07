@@ -40,7 +40,7 @@
   const OUT = qs("#out");
 
   const cols = [
-    { key:"name", label:"名前", render:(r)=> `<span class="chip">${escapeHTML(r.name||"")}</span>` },
+    { key:"name", label:"名前", render:(r)=> `<a href="./character.html?id=${encodeURIComponent(r.chara_id)}"><b>${escapeHTML(r.name||"")}</b></a><div class="small mono">${escapeHTML(r.chara_id||"")}</div>` },
     { key:"join_chapter", label:"加入" },
     { key:"role", label:"役割" },
     { key:"profile_short", label:"概要" },
