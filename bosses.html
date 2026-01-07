@@ -36,12 +36,21 @@
   boot("ボス | DQ7R");
 
   const Q = qs("#q");
-const OUT = qs("#out");
+  const OUT = qs("#out");
 
   const cols = [
-    { key:"name", label:"名前", render:(r)=> `<a href="./boss.html?id=${encodeURIComponent(r.boss_id)}"><b>${escapeHTML(r.name||"")}</b></a><div class="small mono">${escapeHTML(r.boss_id||"")}</div>` },
+    {
+      key:"name",
+      label:"名前",
+      render:(r)=>{
+        const id = (r.boss_id || "").trim();
+        const name = escapeHTML(r.name || "");
+        const idHtml = escapeHTML(r.boss_id || "");
+        return `<a href="./boss.html?id=${encodeURIComponent(id)}">${name}</a><div class="small mono">${idHtml}</div>`;
+      }
+    },
     { key:"location", label:"場所" },
-        { key:"actions_summary", label:"行動ざっくり" },
+    { key:"actions_summary", label:"行動ざっくり" },
     { key:"notes", label:"メモ" }
   ];
 
@@ -50,17 +59,19 @@ const OUT = qs("#out");
   async function render(){
     const rows = await loadCSV("./data/current/bosses.csv");
     const q = norm(Q.value.trim());
-const filtered = rows.filter(r=>{
-if (!q) return true;
+
+    const filtered = rows.filter(r=>{
+      if (!q) return true;
       const blob = [r.boss_id,r.name,r.location,r.actions_summary,r.notes].join(" ").toLowerCase();
       return blob.includes(q);
     });
 
-    OUT.innerHTML = makeTable(filtered, cols) + `<div class="small" style="margin-top:8px;">件数: ${filtered.length}</div>`;
+    OUT.innerHTML = makeTable(filtered, cols) +
+      `<div class="small" style="margin-top:8px;">件数: ${filtered.length}</div>`;
   }
 
   Q.addEventListener("input", render);
-render();
+  render();
 </script>
 </body>
 </html>

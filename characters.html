@@ -36,12 +36,21 @@
   boot("キャラクター | DQ7R");
 
   const Q = qs("#q");
-const OUT = qs("#out");
+  const OUT = qs("#out");
 
   const cols = [
-    { key:"name", label:"名前", render:(r)=> `<a href="./character.html?id=${encodeURIComponent(r.chara_id)}"><b>${escapeHTML(r.name||"")}</b></a><div class="small mono">${escapeHTML(r.chara_id||"")}</div>` },
+    {
+      key:"name",
+      label:"名前",
+      render:(r)=>{
+        const id = (r.chara_id || "").trim();
+        const name = escapeHTML(r.name || "");
+        const idHtml = escapeHTML(r.chara_id || "");
+        return `<a href="./character.html?id=${encodeURIComponent(id)}">${name}</a><div class="small mono">${idHtml}</div>`;
+      }
+    },
     { key:"join_chapter", label:"加入" },
-        { key:"profile_short", label:"概要" },
+    { key:"profile_short", label:"概要" },
     { key:"notes", label:"メモ" }
   ];
 
@@ -50,17 +59,19 @@ const OUT = qs("#out");
   async function render(){
     const rows = await loadCSV("./data/current/characters.csv");
     const q = norm(Q.value.trim());
-const filtered = rows.filter(r=>{
-if (!q) return true;
-      const blob = [r.name,r.profile_short,r.notes,r.join_chapter].join(" ").toLowerCase();
+
+    const filtered = rows.filter(r=>{
+      if (!q) return true;
+      const blob = [r.chara_id,r.name,r.join_chapter,r.profile_short,r.notes].join(" ").toLowerCase();
       return blob.includes(q);
     });
 
-    OUT.innerHTML = makeTable(filtered, cols) + `<div class="small" style="margin-top:8px;">件数: ${filtered.length}</div>`;
+    OUT.innerHTML = makeTable(filtered, cols) +
+      `<div class="small" style="margin-top:8px;">件数: ${filtered.length}</div>`;
   }
 
   Q.addEventListener("input", render);
-render();
+  render();
 </script>
 </body>
 </html>
