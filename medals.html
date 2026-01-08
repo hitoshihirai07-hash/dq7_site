@@ -21,6 +21,11 @@
       <select id="area" class="select">
         <option value="all">エリア: 全て</option>
       </select>
+      <select id="era" class="select">
+        <option value="all">時代: 全て</option>
+        <option value="過去">過去</option>
+        <option value="現代">現代</option>
+      </select>
       <label class="chip" style="cursor:pointer;">
         <input id="onlyUnchecked" type="checkbox" style="vertical-align:middle; margin-right:6px;">
         未チェックのみ
@@ -53,6 +58,7 @@
 
   const Q = qs("#q");
   const AREA = qs("#area");
+  const ERA = qs("#era");
   const ONLY = qs("#onlyUnchecked");
   const RESET = qs("#reset");
   const OUT = qs("#out");
@@ -89,6 +95,7 @@
     const thead = `
       <thead><tr>
         <th style="width:84px;">チェック</th>
+        <th style="width:72px;">時代</th>
         <th>エリア</th>
         <th>場所</th>
         <th>入手</th>
@@ -109,6 +116,7 @@
                 ${badge}
               </label>
             </td>
+            <td>${escapeHTML(r.era ?? "")}</td>
             <td>${escapeHTML(r.area ?? "")}</td>
             <td><span class="mono">${escapeHTML(id)}</span><br>${escapeHTML(r.location ?? "")}</td>
             <td>${escapeHTML(r.how ?? "")}</td>
@@ -127,20 +135,27 @@
     const areas = Array.from(new Set(medals.map(r=>(r.area||"").trim()).filter(Boolean)))
       .sort((a,b)=>a.localeCompare(b,"ja"));
     AREA.innerHTML = `<option value="all">エリア: 全て</option>` + areas.map(a=>`<option value="${escapeHTML(a)}">${escapeHTML(a)}</option>`).join("");
+    const eras = Array.from(new Set(medals.map(r=>(r.era||"").trim()).filter(Boolean)));
+    const order = {"過去":1,"現代":2};
+    eras.sort((a,b)=> (order[a]||99) - (order[b]||99) || a.localeCompare(b,"ja"));
+    ERA.innerHTML = `<option value="all">時代: 全て</option>` + eras.map(e=>`<option value="${escapeHTML(e)}">${escapeHTML(e)}</option>`).join("");
+
 
     let state = loadState();
 
     function render(){
       const q = norm(Q.value.trim());
       const area = AREA.value;
+      const era = ERA.value;
       const only = ONLY.checked;
 
       const filtered = medals.filter(r=>{
         const id = (r.medal_id||"").trim();
         if (area !== "all" && (r.area||"").trim() !== area) return false;
+        if (era !== "all" && (r.era||"").trim() !== era) return false;
         if (only && state[id]) return false;
         if (!q) return true;
-        const blob = [r.medal_id,r.area,r.location,r.how,r.notes].join(" ").toLowerCase();
+        const blob = [r.medal_id,r.era,r.area,r.location,r.how,r.notes].join(" ").toLowerCase();
         return blob.includes(q);
       });
 
@@ -169,6 +184,7 @@
 
     Q.addEventListener("input", render);
     AREA.addEventListener("change", render);
+    ERA.addEventListener("change", render);
     ONLY.addEventListener("change", render);
 
     render();
