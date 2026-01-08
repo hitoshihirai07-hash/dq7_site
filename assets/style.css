@@ -200,3 +200,11 @@ footer{
   color:#6b4a12;
 }
 .mono{font-family:var(--mono)}
+
+/* medals progress */
+.progress{margin:10px 0 14px;}
+.progress-row{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:8px;}
+progress{width:100%; height:14px; border-radius:999px; overflow:hidden;}
+progress::-webkit-progress-bar{background:rgba(0,0,0,.08); border-radius:999px;}
+progress::-webkit-progress-value{background:rgba(232,137,47,.85); border-radius:999px;}
+.chip.ok{border-color:rgba(34,139,34,.35); background:rgba(34,139,34,.10);}

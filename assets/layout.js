@@ -21,6 +21,7 @@ export function renderHeader({title="DQ7R データベース", subtitle=""} = {}
         <a href="./characters.html">キャラクター</a>
         <a href="./jobs.html">職業</a>
         <a href="./items.html">アイテム</a>
+        <a href="./medals.html">ちいさなメダル</a>
         <a href="./spells.html">呪文</a>
         <a href="./skills.html">特技</a>
       </nav>
