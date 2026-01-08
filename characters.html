@@ -46,7 +46,7 @@
         const id = (r.chara_id || "").trim();
         const name = escapeHTML(r.name || "");
         const idHtml = escapeHTML(r.chara_id || "");
-        return `<a href="./character.html?id=${encodeURIComponent(id)}">${name}</a><div class="small mono">${idHtml}</div>`;
+        return `<a href="./character.html?id=${encodeURIComponent(id)}">${name}</a>`;
       }
     },
     { key:"join_chapter", label:"加入" },

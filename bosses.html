@@ -46,7 +46,7 @@
         const id = (r.boss_id || "").trim();
         const name = escapeHTML(r.name || "");
         const idHtml = escapeHTML(r.boss_id || "");
-        return `<a href="./boss.html?id=${encodeURIComponent(id)}">${name}</a><div class="small mono">${idHtml}</div>`;
+        return `<a href="./boss.html?id=${encodeURIComponent(id)}">${name}</a>`;
       }
     },
     { key:"location", label:"場所" },
