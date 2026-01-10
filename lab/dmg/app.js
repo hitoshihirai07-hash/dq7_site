@@ -736,7 +736,7 @@
   }
 
   function buildCsvFromSaved(saved){
-    const header = ['ボス名','攻撃','平均','試行','ミス','ミス率(%)'];
+    const header = ['ボス名','攻撃','平均(ヒット)','ヒットn','試行','ミス','ミス率(%)'];
     const rows = [header];
 
     for (const snap of (saved || [])){
@@ -748,7 +748,8 @@
         const attempts = Number.isFinite(Number(c.attempts)) ? Math.floor(Number(c.attempts)) : '';
         const misses = Number.isFinite(Number(c.misses)) ? Math.floor(Number(c.misses)) : '';
         const missRatePct = Number.isFinite(Number(c.missRate)) ? (Number(c.missRate) * 100).toFixed(2) : '';
-        rows.push([boss, atk, mean, attempts, misses, missRatePct]);
+        const hitN = Number.isFinite(Number(c.n)) ? Math.floor(Number(c.n)) : '';
+        rows.push([boss, atk, mean, hitN, attempts, misses, missRatePct]);
       }
     }
 

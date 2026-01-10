@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="color-scheme" content="light dark" />
+  <title>管理者ラボ：サイト確認</title>
+
+  <style>
+    :root{
+      --bg: #fbf7ef;
+      --ink:#1b1b1b;
+      --accent:#f0b36a;
+      --accent2:#f7d7b2;
+      --card: rgba(255,255,255,.82);
+      --line: rgba(0,0,0,.08);
+      --soft: rgba(255,255,255,.72);
+    }
+    body{
+      background:
+        radial-gradient(900px 400px at 12% 0%, var(--accent2), transparent 55%),
+        radial-gradient(900px 400px at 88% 0%, #d7ecff, transparent 60%),
+        var(--bg);
+      color: var(--ink);
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
+    }
+    .wrap{ max-width: 860px; margin: 0 auto; padding: 22px 14px 30px; }
+    .brand{ font-size: 22px; letter-spacing: .02em; margin:0; }
+    .sub{ margin: 8px 0 0; opacity:.75; line-height:1.5; }
+
+    .card{
+      margin-top: 16px;
+      padding: 18px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, var(--card), rgba(255,255,255,.65));
+      backdrop-filter: blur(6px);
+    }
+
+    .toolbar{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      margin-top: 14px;
+    }
+    .search{
+      flex: 1 1 260px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.82);
+    }
+    .search input{
+      width: 100%;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: inherit;
+      font-size: 14px;
+    }
+    .hint{
+      font-size: 12px;
+      opacity: .72;
+      line-height: 1.6;
+      margin: 10px 0 0;
+    }
+
+    details.cat{
+      margin-top: 12px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.75), rgba(255,255,255,.60));
+      overflow:hidden;
+    }
+    details.cat[open] > summary{ border-bottom: 1px solid var(--line); }
+    summary{
+      list-style: none;
+      cursor: pointer;
+      padding: 12px 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      user-select:none;
+    }
+    summary::-webkit-details-marker{ display:none; }
+
+    .catTitle{
+      display:flex; gap:10px; align-items:center;
+      font-weight: 750;
+    }
+    .badge{
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.8);
+      opacity: .85;
+      white-space: nowrap;
+    }
+
+    .navrow{ display:flex; gap:10px; flex-wrap:wrap; padding: 14px; }
+    .pill{
+      display:inline-flex; align-items:center; justify-content:center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.82);
+      text-decoration:none;
+      font-weight: 650;
+      min-width: 160px;
+      color: inherit;
+    }
+    .pill.primary{
+      background: linear-gradient(180deg, rgba(240,179,106,.95), rgba(240,179,106,.75));
+    }
+    .kbd{
+      font-size: 11px;
+      opacity: .72;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.7);
+      border-radius: 10px;
+      padding: 3px 8px;
+      white-space: nowrap;
+    }
+
+    .rowEnd{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:flex-end;
+      margin-top: 10px;
+    }
+    .btn{
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.82);
+      cursor: pointer;
+      font-weight: 650;
+      color: inherit;
+    }
+
+    .msg{ margin-top: 10px; font-size: 12px; opacity:.75; min-height: 1.2em; }
+
+    @media (max-width: 700px){
+      .pill{ min-width: 140px; }
+      .rowEnd{ justify-content:flex-start; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="wrap">
+    <header>
+      <h1 class="brand">サイト確認</h1>
+      <p class="sub">自分用のショートカット</p>
+
+      <div class="rowEnd" style="justify-content:flex-start;margin-top:10px">
+        <a class="btn" href="../" style="text-decoration:none;display:inline-block">管理者ラボへ戻る</a>
+      </div>
+    </header>
+
+    <section class="card" aria-label="操作">
+      <div class="toolbar">
+        <div class="search" role="search">
+          <span aria-hidden="true">🔎</span>
+          <input id="q" type="search" inputmode="search" placeholder="検索（例：DQ / pixiv / admin）" autocomplete="off" />
+        </div>
+
+        <div class="rowEnd">
+          <button class="btn" id="openAll" type="button">全部ひらく</button>
+          <button class="btn" id="closeAll" type="button">全部たたむ</button>
+          <button class="btn" id="clear" type="button">検索クリア</button>
+        </div>
+      </div>
+      <div class="msg" id="msg" aria-live="polite"></div>
+    </section>
+
+    <section class="card" aria-label="リンク">
+      <div id="cats"></div>
+    </section>
+
+    <footer class="card">
+      <p style="margin:0">@自分用</p>
+    </footer>
+  </main>
+
+  <script>
+    // ★ここを増やせばリンクが増えます（カテゴリ / ショートカットも一緒に管理）
+    const LINKS = [
+      { label: "小説サイト",       url: "https://novel-portal.pages.dev/",        category: "小説",     primary: true},
+      { label: "小説サイト管理",   url: "https://novel-portal.pages.dev/admin/",  category: "小説",     primary: true},
+
+      { label: "DQ1/2サイト",      url: "https://dq-site.pages.dev/",             category: "ゲーム",   primary: false},
+      { label: "ポケモン計算",     url: "https://bdcpp.pages.dev/",               category: "ゲーム",   primary: false},
+      { label: "DQ1/2サイト検証用",      url: "https://hitoshihirai07-hash.github.io/dq_site2/",             category: "ゲーム",   primary: false},
+      { label: "ポケモンシミュレーション",     url: "https://pkmn-pick-lab.pages.dev/",               category: "ゲーム",   primary: false},
+　　　{ label: "DQ7R",     url: "https://dq7-site.pages.dev/",               category: "ゲーム",   primary: false},
+
+      { label: "pixiv",            url: "https://www.pixiv.net/dashboard/works",  category: "投稿",     primary: false},
+      { label: "カクヨム",         url: "https://kakuyomu.jp/my",                 category: "投稿",     primary: false},
+    ];
+
+    // 表示順（ここにないカテゴリは最後にまとめて出ます）
+    const CATEGORY_ORDER = ["小説", "ゲーム", "投稿", "その他"];
+
+    const elCats = document.getElementById("cats");
+    const elQ = document.getElementById("q");
+    const elMsg = document.getElementById("msg");
+
+    const norm = (s) => (s || "").toString().toLowerCase();
+    const match = (item, q) => {
+      if (!q) return true;
+      const t = norm(q);
+      return norm(item.label).includes(t) || norm(item.url).includes(t) || norm(item.category).includes(t);
+    };
+
+    function groupLinks(list){
+      const map = new Map();
+      for (const it of list){
+        const k = it.category || "その他";
+        if (!map.has(k)) map.set(k, []);
+        map.get(k).push(it);
+      }
+      // stabilize sort: primary first, then label
+      for (const [k, arr] of map.entries()){
+        arr.sort((a,b) => (b.primary?1:0)-(a.primary?1:0) || a.label.localeCompare(b.label, "ja"));
+      }
+      return map;
+    }
+
+    function render(){
+      const q = elQ.value.trim();
+      const filtered = LINKS.filter(it => match(it, q));
+      const grouped = groupLinks(filtered);
+
+      // category order
+      const cats = Array.from(grouped.keys());
+      cats.sort((a,b) => {
+        const ia = CATEGORY_ORDER.indexOf(a);
+        const ib = CATEGORY_ORDER.indexOf(b);
+        const ra = ia === -1 ? 999 : ia;
+        const rb = ib === -1 ? 999 : ib;
+        return ra - rb || a.localeCompare(b, "ja");
+      });
+
+      elCats.innerHTML = "";
+
+      if (filtered.length === 0){
+        elCats.innerHTML = '<p class="hint" style="margin:0">該当なし。検索ワードを変えてみて。</p>';
+        return;
+      }
+
+      for (const cat of cats){
+        const items = grouped.get(cat) || [];
+        const det = document.createElement("details");
+        det.className = "cat";
+        det.open = true;
+
+        const sum = document.createElement("summary");
+        sum.innerHTML = `
+          <div class="catTitle">
+            <span>${escapeHtml(cat)}</span>
+            <span class="badge">${items.length}</span>
+          </div>
+          <span class="badge">クリックで開閉</span>
+        `;
+
+        const row = document.createElement("div");
+        row.className = "navrow";
+
+        for (const it of items){
+          const a = document.createElement("a");
+          a.className = "pill" + (it.primary ? " primary" : "");
+          a.href = it.url;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          a.dataset.hotkey = it.hotkey || "";
+          a.innerHTML = `
+            <span>${escapeHtml(it.label)}</span>
+            ""
+          `;
+          row.appendChild(a);
+        }
+
+        det.appendChild(sum);
+        det.appendChild(row);
+        elCats.appendChild(det);
+      }
+    }
+
+    function escapeHtml(s){
+      return (s ?? "").toString()
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#39;");
+    }
+
+    function setMsg(t){
+      elMsg.textContent = t || "";
+      if (t) setTimeout(() => { if (elMsg.textContent === t) elMsg.textContent = ""; }, 2200);
+    }
+
+    // Search
+    elQ.addEventListener("input", render);
+
+    document.getElementById("clear").addEventListener("click", () => {
+      elQ.value = "";
+      elQ.focus();
+      render();
+      setMsg("検索をクリアしました");
+    });
+
+    // Expand/Collapse
+    document.getElementById("openAll").addEventListener("click", () => {
+      document.querySelectorAll("details.cat").forEach(d => d.open = true);
+      setMsg("全部ひらきました");
+    });
+    document.getElementById("closeAll").addEventListener("click", () => {
+      document.querySelectorAll("details.cat").forEach(d => d.open = false);
+      setMsg("全部たたみました");
+    });
+render();
+  </script>
+</body>
+</html>
