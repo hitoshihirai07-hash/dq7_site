@@ -104,10 +104,15 @@
         <div class="set-title">セット <span class="set-idx"></span></div>
         <button class="btn ghost btnRemoveSet" type="button" title="このセットを削除">削除</button>
       </div>
-      <div class="grid2">
+      <div class="grid3">
         <div class="field">
           <label>攻撃力（必須）</label>
           <input class="atk" type="number" min="0" step="1" placeholder="例：83" />
+        </div>
+        <div class="field">
+          <label>回避/ミス回数（任意）</label>
+          <input class="miss" type="number" min="0" step="1" placeholder="例：3" />
+          <div class="hint">※ログに「ミス」「かわされた」等が混ざる場合は自動で数えます（ここは空でOK）。</div>
         </div>
         <div class="field">
           <label>タグ（任意）</label>
@@ -119,9 +124,10 @@
         <textarea class="log" rows="6" placeholder="例：
 52
 49
+ミス
 51
 ..."></textarea>
-        <div class="hint"><span class="logInfo">0件</span>（解析時に数値だけ抽出します）</div>
+        <div class="hint"><span class="logInfo">0件</span>（数値＝ヒット、ミス系文字＝回避としてカウントします）</div>
       </div>
     </article>
   </template>

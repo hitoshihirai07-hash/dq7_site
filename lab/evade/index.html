@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>管理者ラボ：回避率（実測）</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="stylesheet" href="../shared/lab.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <div class="brand">
+        <div class="title">回避率（実測）</div>
+        <div class="subtitle">攻撃回数と「回避/ミス」回数から推定（端末内保存）</div>
+      </div>
+      <div class="actions">
+        <a class="btn ghost" href="../">管理者ラボ</a>
+        <button id="btnExportAll" class="btn ghost" type="button">保存データを書き出し</button>
+        <label class="btn ghost" style="position:relative;overflow:hidden">
+          読み込み
+          <input id="importFile" type="file" accept="application/json" style="position:absolute;inset:0;opacity:0;cursor:pointer" />
+        </label>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="panel">
+      <h2>入力</h2>
+
+      <div class="grid2">
+        <div class="field">
+          <label>敵名（任意）</label>
+          <input id="enemyName" type="text" placeholder="例：ボス名 / モンスター名" />
+        </div>
+        <div class="field">
+          <label>技/行動（任意）</label>
+          <input id="moveName" type="text" placeholder="例：通常攻撃 / ○○斬り / 〇〇の息" />
+        </div>
+      </div>
+
+      <div class="field" style="margin-top:10px">
+        <label>条件メモ（任意）</label>
+        <input id="memo" type="text" placeholder="例：命中補正なし / バフなし / 昼 / 装備A / Lv〇〇" />
+        <div class="hint">
+          ※ここで出すのは「その条件での実測ミス率（回避率）」です。<br>
+          攻撃側の命中補正・状態異常・相性・技固有の命中判定がある場合は、それも全部混ざった値になります。
+        </div>
+      </div>
+
+      <details class="opts" open>
+        <summary>入力方法</summary>
+        <div class="grid2">
+          <div class="card">
+            <div class="card-title">A) 数字で入力（最短）</div>
+            <div class="grid2" style="margin-top:10px">
+              <div class="field">
+                <label>攻撃回数（必須）</label>
+                <input id="attempts" type="number" min="0" step="1" placeholder="例：120" />
+              </div>
+              <div class="field">
+                <label>回避/ミス回数（必須）</label>
+                <input id="evades" type="number" min="0" step="1" placeholder="例：7" />
+              </div>
+            </div>
+            <div class="small" style="margin-top:8px">※攻撃回数と回避回数だけ分かれば計算できます。</div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">B) 結果ログを貼る（自動カウント）</div>
+            <div class="small">1行1回ぶんで、どれかを書いてください：</div>
+            <div class="small" style="margin-top:6px">
+              ヒット：<code>H</code> / <code>hit</code> / <code>○</code> / <code>1</code><br>
+              回避：<code>M</code> / <code>miss</code> / <code>×</code> / <code>0</code> / <code>ミス</code> / <code>かわされた</code> / <code>回避</code>
+            </div>
+            <div class="field" style="margin-top:10px">
+              <label>結果ログ（任意）</label>
+              <textarea id="resultLog" rows="6" placeholder="例：
+H
+H
+M
+H
+ミス
+かわされた"></textarea>
+              <div class="hint"><span id="logInfo">0件</span>（ヒット/回避を自動判定）</div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <div class="toolbar">
+        <button id="btnCalc" class="btn primary" type="button">計算する</button>
+        <button id="btnSave" class="btn" type="button">結果を保存</button>
+        <button id="btnCopy" class="btn ghost" type="button">結果をコピー</button>
+        <button id="btnClear" class="btn danger" type="button">クリア</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>結果</h2>
+      <div id="out" class="result empty">まだ計算してません。</div>
+    </section>
+
+    <section class="panel">
+      <h2>保存した結果</h2>
+      <div id="saved" class="result empty">まだ保存がありません。</div>
+    </section>
+
+    <footer class="foot">
+      <small>このページは端末内（localStorage）に保存します。サーバー送信はしません。</small>
+    </footer>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>

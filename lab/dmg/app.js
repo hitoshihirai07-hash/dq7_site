@@ -38,21 +38,62 @@
     return new Date().toISOString();
   }
 
-  function parseNumbers(text){
-    if (!text) return [];
-    // Accept newline/space/comma/semicolon etc.
-    const tokens = text
-      .replace(/（.*?）/g, ' ')
-      .replace(/[，、]/g, ',')
-      .split(/[^0-9\-]+/g)
-      .filter(Boolean);
+  function parseDamageLog(text){
+    // Returns {damages:number[], missDetected:number, unknownLines:number, totalLines:number}
+    const lines = String(text || '').split(/\r?\n/);
+    const damages = [];
+    let missDetected = 0;
+    let unknownLines = 0;
+    let totalLines = 0;
 
-    const nums = [];
-    for (const t of tokens){
-      const n = Number(t);
-      if (Number.isFinite(n)) nums.push(n);
+    for (const rawLine of lines){
+      const line = (rawLine || '').trim();
+      if (!line) continue;
+      totalLines++;
+
+      // If the line contains a number, treat as damage (first number found)
+      const numMatch = line.match(/-?\d+/);
+      if (numMatch){
+        const n = Number(numMatch[0]);
+        if (Number.isFinite(n)) {
+          damages.push(n);
+          continue;
+        }
+      }
+
+      const s = line.toLowerCase();
+
+      const isMiss =
+        s === 'm' || s === 'miss' || s === 'x' || s === '×' || s === '0' ||
+        s.includes('miss') || s.includes('ミス') || s.includes('かわされた') || s.includes('回避') ||
+        s.includes('よけ') || s.includes('避け') || s.includes('躱') || s.includes('dodge');
+
+      if (isMiss){
+        missDetected++;
+      } else {
+        unknownLines++;
+      }
     }
-    return nums;
+
+    // Also support pasted logs with numbers separated by spaces/commas on one line.
+    if (totalLines <= 1 && damages.length <= 1){
+      const tokens = String(text || '')
+        .replace(/（.*?）/g, ' ')
+        .replace(/[，、]/g, ',')
+        .split(/[^0-9\-]+/g)
+        .filter(Boolean);
+
+      const nums = [];
+      for (const t of tokens){
+        const n = Number(t);
+        if (Number.isFinite(n)) nums.push(n);
+      }
+      if (nums.length > damages.length){
+        return { damages: nums, missDetected: 0, unknownLines: 0, totalLines: nums.length };
+      }
+    }
+
+    return { damages, missDetected, unknownLines, totalLines };
   }
 
   function quantile(sorted, q){
@@ -182,10 +223,19 @@
     const logEl = node.querySelector('textarea.log');
     const infoEl = node.querySelector('.logInfo');
     const updateInfo = () => {
-      const nums = parseNumbers(logEl.value);
-      infoEl.textContent = `${nums.length}件`;
+      const parsed = parseDamageLog(logEl.value);
+      const missInput = Number(node.querySelector('input.miss')?.value || 0);
+      const miss = (Number.isFinite(missInput) ? Math.max(0, Math.floor(missInput)) : 0) + parsed.missDetected;
+      const hits = parsed.damages.length;
+      const attempts = hits + miss;
+      infoEl.textContent = `${hits}件（ヒット） / ミス${miss}件 / 試行${attempts}回`;
     };
     logEl.addEventListener('input', updateInfo);
+    const missEl = node.querySelector('input.miss');
+    if (missEl){
+      missEl.addEventListener('input', updateInfo);
+      missEl.addEventListener('change', updateInfo);
+    }
     updateInfo();
 
     node.querySelector('.btnRemoveSet').addEventListener('click', () => {
@@ -203,11 +253,13 @@
   function addSet(data){
     const node = buildSetDom();
     const atkEl = node.querySelector('input.atk');
+    const missEl = node.querySelector('input.miss');
     const tagEl = node.querySelector('input.tag');
     const logEl = node.querySelector('textarea.log');
 
     if (data){
       atkEl.value = data.atk ?? '';
+      if (missEl) missEl.value = data.miss ?? '';
       tagEl.value = data.tag ?? '';
       logEl.value = data.log ?? '';
     }
@@ -220,6 +272,7 @@
   function getCurrentInput(){
     const sets = [...setsEl.querySelectorAll('.set')].map(node => ({
       atk: Number(node.querySelector('input.atk').value),
+      miss: Number(node.querySelector('input.miss')?.value || 0),
       tag: (node.querySelector('input.tag').value || '').trim(),
       log: node.querySelector('textarea.log').value || ''
     }));
@@ -282,9 +335,16 @@
     const per = [];
     for (const s of sets){
       const atk = Number(s.atk);
-      const nums = parseNumbers(s.log);
+      const parsed = parseDamageLog(s.log);
+      const nums = parsed.damages;
       const rawStats = stats(nums);
       const sorted = rawStats.sorted;
+
+      const missInput = Number.isFinite(Number(s.miss)) ? Math.max(0, Math.floor(Number(s.miss))) : 0;
+      const misses = missInput + parsed.missDetected;
+      const hits = nums.length;
+      const attempts = hits + misses;
+      const missRate = attempts > 0 ? (misses / attempts) : NaN;
 
       const iqr = iqrFilter(sorted);
       const iqrStats = stats(iqr.filtered);
@@ -299,6 +359,8 @@
       per.push({
         atk, tag: s.tag || '',
         nums,
+        logMeta: { missDetected: parsed.missDetected, unknownLines: parsed.unknownLines, totalLines: parsed.totalLines, missInput },
+        hits, misses, attempts, missRate,
         raw: rawStats,
         iqr: iqrStats,
         trim: trimStats,
@@ -329,7 +391,7 @@
 
     const compare = per
       .filter(x => Number.isFinite(x.atk) && x.atk > 0 && pick(x).n > 0)
-      .map(x => ({ atk: x.atk, mean: pick(x).mean, median: pick(x).median, n: pick(x).n }));
+      .map(x => ({ atk: x.atk, mean: pick(x).mean, median: pick(x).median, n: pick(x).n, attempts: x.attempts, misses: x.misses, missRate: x.missRate }));
 
     const reg = linearRegression(compare.map(x=>x.atk), compare.map(x=>x.mean));
 
@@ -411,6 +473,8 @@
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0 10px">
           <div><strong>セット${idx+1}</strong>：攻撃力 <span style="font-family:var(--mono);font-weight:900">${escapeHtml(String(x.atk || '—'))}</span></div>
           ${x.tag ? `<span class="badge">${escapeHtml(x.tag)}</span>` : ''}
+          ${Number.isFinite(x.missRate) ? `<span class="badge">試行${escapeHtml(String(x.attempts))}（H${escapeHtml(String(x.hits))}/M${escapeHtml(String(x.misses))}）</span>` : ''}
+          ${Number.isFinite(x.missRate) ? `<span class="badge warn">ミス率 ${escapeHtml((x.missRate*100).toFixed(2))}%</span>` : ''}
           ${warn}
         </div>
       `;
@@ -450,6 +514,9 @@
         <tr>
           <td>${x.atk}</td>
           <td>${x.n}</td>
+          <td>${x.attempts ?? '—'}</td>
+          <td>${x.misses ?? '—'}</td>
+          <td>${Number.isFinite(x.missRate) ? (x.missRate*100).toFixed(2)+'%' : '—'}</td>
           <td>${fmt(x.mean,2)}</td>
           <td>${fmt(x.median,2)}</td>
         </tr>
@@ -466,7 +533,7 @@
         <h3 style="margin:12px 0 8px;font-size:14px">攻撃力別の比較（${escapeHtml(modeLabel)}）</h3>
         <table class="table">
           <thead>
-            <tr><th>攻撃力</th><th>n</th><th>平均</th><th>中央値</th></tr>
+            <tr><th>攻撃力</th><th>n(ヒット)</th><th>試行</th><th>ミス</th><th>ミス率</th><th>平均</th><th>中央値</th></tr>
           </thead>
           <tbody>${rows}</tbody>
         </table>
@@ -575,7 +642,7 @@
     if (analyzed.compare && analyzed.compare.length >= 1){
       lines.push('--- 攻撃力別（平均/中央値/n） ---');
       for (const x of analyzed.compare){
-        lines.push(`攻撃${x.atk}: 平均${round(x.mean)} / 中央値${round(x.median)} / n=${x.n}`);
+        lines.push(`攻撃${x.atk}: 平均${round(x.mean)} / 中央値${round(x.median)} / ヒットn=${x.n} / 試行${x.attempts ?? '—'} / ミス${x.misses ?? '—'} / ミス率${(Number.isFinite(x.missRate)?(x.missRate*100).toFixed(2)+'%':'—')}`);
       }
       if (Number.isFinite(analyzed.regression?.slope)){
         lines.push(`近似: 攻撃+1で平均+${round(analyzed.regression.slope,3)}（R²=${round(analyzed.regression.r2,3)}）`);
@@ -586,6 +653,9 @@
     for (let i=0;i<analyzed.per.length;i++){
       const s = analyzed.per[i];
       lines.push(`--- セット${i+1} 攻撃${s.atk}${s.tag ? ` (${s.tag})` : ''} ---`);
+      if (Number.isFinite(s.missRate)){
+        lines.push(`試行${s.attempts}（ヒット${s.hits}/ミス${s.misses}） ミス率 ${(s.missRate*100).toFixed(2)}%`);
+      }
       const show = (label, st) => lines.push(`${label}: n=${st.n} min=${iRound(st.min)} max=${iRound(st.max)} mean=${round(st.mean)} med=${round(st.median)} sd=${round(st.stdev)} p10=${round(st.p10)} p90=${round(st.p90)}`);
       show('生', s.raw);
       show('IQR', s.iqr);
