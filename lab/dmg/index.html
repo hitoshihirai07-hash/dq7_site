@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>検証ラボ：ダメージログ解析</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <div class="brand">
+        <div class="title">検証ラボ：ダメージログ解析</div>
+        <div class="subtitle">防御力不明でも「実測ログ」を整理して判断できるやつ（端末内保存）</div>
+      </div>
+      <div class="actions">
+        <a class="btn ghost" href="/" title="トップへ">トップ</a>
+        <button id="btnExportAll" class="btn ghost" type="button">保存データを書き出し</button>
+        <label class="btn ghost file">
+          読み込み
+          <input id="importFile" type="file" accept="application/json" />
+        </label>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="panel">
+      <h2>入力</h2>
+
+      <div class="grid2">
+        <div class="field">
+          <label>敵名（任意）</label>
+          <input id="enemyName" type="text" placeholder="例：ボス名 / モンスター名" />
+        </div>
+        <div class="field">
+          <label>条件メモ（任意）</label>
+          <input id="conditionMemo" type="text" placeholder="例：通常攻撃固定 / バフなし / 〇〇装備" />
+        </div>
+      </div>
+
+      <details class="opts" open>
+        <summary>外れ値・カット設定</summary>
+        <div class="grid3">
+          <div class="field">
+            <label class="row">
+              <input id="optIqr" type="checkbox" />
+              <span>外れ値除外（IQR 1.5倍）</span>
+            </label>
+            <div class="hint">会心っぽい混入を雑に弾く用。ON/OFFで両方表示します。</div>
+          </div>
+
+          <div class="field">
+            <label>上位カット（%）</label>
+            <input id="optTrimHi" type="number" min="0" max="20" step="1" value="0" />
+            <div class="hint">上振れ（会心/特別ヒット）を除外したいときに。</div>
+          </div>
+
+          <div class="field">
+            <label>下位カット（%）</label>
+            <input id="optTrimLo" type="number" min="0" max="20" step="1" value="0" />
+            <div class="hint">下振れを除外したいときに（基本は0でOK）。</div>
+          </div>
+        </div>
+      </details>
+
+      <div class="toolbar">
+        <button id="btnAddSet" class="btn" type="button">＋ セット追加</button>
+        <button id="btnAnalyze" class="btn primary" type="button">解析する</button>
+        <button id="btnSaveSnapshot" class="btn" type="button">結果を保存</button>
+        <button id="btnClear" class="btn danger" type="button">クリア</button>
+      </div>
+
+      <div id="sets" class="sets"></div>
+
+      <div class="note">
+        <div class="note-title">入力のコツ</div>
+        <ul>
+          <li>「攻撃力」と「ダメージの羅列」だけでOK（防御力は不要）。</li>
+          <li>ダメージは改行区切りで貼り付け。スペース/カンマ混在でも拾います。</li>
+          <li>同条件（敵・通常攻撃固定など）で、攻撃力が違うセットを追加すると比較が出ます。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>結果</h2>
+      <div id="result" class="result empty">まだ解析してません。</div>
+    </section>
+
+    <section class="panel">
+      <h2>保存した結果</h2>
+      <div id="saved" class="saved empty">まだ保存がありません。</div>
+    </section>
+
+    <footer class="foot">
+      <small>※このページは端末内（localStorage）に保存します。サーバー送信はしません。</small>
+    </footer>
+  </main>
+
+  <template id="setTemplate">
+    <article class="set">
+      <div class="set-head">
+        <div class="set-title">セット <span class="set-idx"></span></div>
+        <button class="btn ghost btnRemoveSet" type="button" title="このセットを削除">削除</button>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>攻撃力（必須）</label>
+          <input class="atk" type="number" min="0" step="1" placeholder="例：83" />
+        </div>
+        <div class="field">
+          <label>タグ（任意）</label>
+          <input class="tag" type="text" placeholder="例：装備A / 装備B / Lv〇〇" />
+        </div>
+      </div>
+      <div class="field">
+        <label>ダメージログ（必須）</label>
+        <textarea class="log" rows="6" placeholder="例：
+52
+49
+51
+..."></textarea>
+        <div class="hint"><span class="logInfo">0件</span>（解析時に数値だけ抽出します）</div>
+      </div>
+    </article>
+  </template>
+
+  <script src="./app.js"></script>
+</body>
+</html>
