@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>管理者ラボ：診断情報</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="stylesheet" href="../shared/lab.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <div class="brand">
+        <div class="title">診断情報</div>
+        <div class="subtitle">不具合切り分け用：端末/ブラウザ/キャッシュ/ネットワーク</div>
+      </div>
+      <div class="actions">
+        <a class="btn ghost" href="../">管理者ラボ</a>
+        <button id="btnCopy" class="btn primary" type="button">まとめをコピー</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="panel">
+      <h2>基本</h2>
+      <div id="basic" class="kv"></div>
+    </section>
+
+    <section class="panel">
+      <h2>画面・入力</h2>
+      <div id="screen" class="kv"></div>
+    </section>
+
+    <section class="panel">
+      <h2>ネットワーク</h2>
+      <div id="net" class="kv"></div>
+      <div class="small">※Network Information APIは対応ブラウザのみです。</div>
+    </section>
+
+    <section class="panel">
+      <h2>ストレージ・キャッシュ</h2>
+      <div id="storage" class="kv"></div>
+      <div class="toolbar">
+        <button id="btnClearLocal" class="btn danger" type="button">このラボの保存データを初期化</button>
+      </div>
+      <div class="small">※この操作は <code>/lab/</code> 内ツールの localStorage を消します。公開ページ側のデータは影響しません。</div>
+    </section>
+
+    <section class="panel">
+      <h2>Service Worker</h2>
+      <div id="sw" class="kv"></div>
+      <div class="toolbar">
+        <button id="btnUnregSW" class="btn ghost" type="button">Service Worker 登録解除</button>
+      </div>
+      <div class="small">※SW導入前は何も起きません。導入後の切り分け用。</div>
+    </section>
+
+    <section class="panel">
+      <h2>エラー監視（このページ内）</h2>
+      <pre id="errors" class="pre"></pre>
+      <div class="small">※このページで起きたJSエラーだけ記録します。</div>
+    </section>
+
+    <footer class="foot">
+      <small>このページはサーバー送信しません。</small>
+    </footer>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>

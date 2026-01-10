@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>管理者ラボ：データ検品</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="stylesheet" href="../shared/lab.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <div class="brand">
+        <div class="title">データ検品</div>
+        <div class="subtitle">CSV/JSONをドラッグ&ドロップ→必須列・重複ID・空欄率・表記ゆれっぽいものをチェック</div>
+      </div>
+      <div class="actions">
+        <a class="btn ghost" href="../">管理者ラボ</a>
+        <button id="btnCopyReport" class="btn primary" type="button">レポートをコピー</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="panel">
+      <h2>ファイル入力</h2>
+
+      <div class="grid2">
+        <div class="field">
+          <label>検品対象（CSV/JSON）</label>
+          <input id="file" type="file" accept=".csv,.json,text/csv,application/json" />
+          <div class="hint">複数ファイルはまだ非対応（必要なら後で追加できます）。</div>
+        </div>
+
+        <div class="field">
+          <label>主キー列（ID）</label>
+          <input id="keyCol" type="text" placeholder="例：id / ID / item_id（空なら自動推定）" />
+          <div class="hint">空なら <code>id</code>/<code>ID</code>/<code>Id</code> などから推定します。</div>
+        </div>
+      </div>
+
+      <details class="opts" open>
+        <summary>検品設定</summary>
+        <div class="grid3">
+          <div class="field">
+            <label>必須列（カンマ区切り）</label>
+            <input id="reqCols" type="text" placeholder="例：id,name" />
+            <div class="hint">空なら「主キー列」だけ必須扱い。</div>
+          </div>
+
+          <div class="field">
+            <label>空欄率の警告しきい値（%）</label>
+            <input id="nullWarn" type="number" min="0" max="100" value="60" />
+          </div>
+
+          <div class="field">
+            <label>表記ゆれ検出（name列）</label>
+            <select id="nameCol">
+              <option value="">自動（name/title）</option>
+              <option value="name">name</option>
+              <option value="title">title</option>
+            </select>
+            <div class="hint">同名っぽいのに表記が違う（空白/全角半角など）を拾います。</div>
+          </div>
+        </div>
+      </details>
+
+      <div class="drop" id="drop">
+        <div class="drop-inner">
+          <div class="drop-title">ここにファイルをドロップでもOK</div>
+          <div class="drop-sub">CSV / JSON</div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <button id="btnRun" class="btn primary" type="button">検品する</button>
+        <button id="btnClear" class="btn danger" type="button">クリア</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>結果</h2>
+      <div id="out" class="result empty">まだ検品してません。</div>
+    </section>
+
+    <footer class="foot">
+      <small>このページはサーバー送信しません。</small>
+    </footer>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
