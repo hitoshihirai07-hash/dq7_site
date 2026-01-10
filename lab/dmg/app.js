@@ -726,21 +726,54 @@
     toast('保存しました');
   }
 
-  function exportAll(){
-    const data = {
-      version: 1,
-      exportedAt: nowISO(),
-      saved: loadSaved()
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  
+  function csvEscape(v){
+    const s = String(v ?? '');
+    if (s.includes('"') || s.includes(',') || s.includes('\n') || s.includes('\r')){
+      return '"' + s.replaceAll('"', '""') + '"';
+    }
+    return s;
+  }
+
+  function buildCsvFromSaved(saved){
+    const header = ['ボス名','攻撃','平均','試行','ミス','ミス率(%)'];
+    const rows = [header];
+
+    for (const snap of (saved || [])){
+      const boss = (snap?.meta?.enemyName || '').trim();
+      const comp = Array.isArray(snap?.compare) ? snap.compare : [];
+      for (const c of comp){
+        const atk = Number.isFinite(Number(c.atk)) ? Number(c.atk) : '';
+        const mean = Number.isFinite(Number(c.mean)) ? Number(c.mean).toFixed(2) : '';
+        const attempts = Number.isFinite(Number(c.attempts)) ? Math.floor(Number(c.attempts)) : '';
+        const misses = Number.isFinite(Number(c.misses)) ? Math.floor(Number(c.misses)) : '';
+        const missRatePct = Number.isFinite(Number(c.missRate)) ? (Number(c.missRate) * 100).toFixed(2) : '';
+        rows.push([boss, atk, mean, attempts, misses, missRatePct]);
+      }
+    }
+
+    // UTF-8 BOM for Excel / Japanese environments
+    return '\ufeff' + rows.map(r => r.map(csvEscape).join(',')).join('\n');
+  }
+
+function exportAll(){
+    const saved = loadSaved();
+    const csvText = buildCsvFromSaved(saved);
+    const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'dq7_lab_dmg_saved.json';
+    a.download = 'dq7_lab_dmg_saved.csv';
     document.body.appendChild(a);
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
+  }
+
+  async function copyCsvAll(){
+    const saved = loadSaved();
+    const csvText = buildCsvFromSaved(saved);
+    await copyToClipboard(csvText);
   }
 
   async function importAll(file){
@@ -787,6 +820,9 @@
     btnSaveSnapshot.addEventListener('click', saveSnapshot);
 
     btnExportAll.addEventListener('click', exportAll);
+    if (btnCopyCsvAll){
+      btnCopyCsvAll.addEventListener('click', copyCsvAll);
+    }
     importFileEl.addEventListener('change', async () => {
       const f = importFileEl.files?.[0];
       if (!f) return;
