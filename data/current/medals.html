@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="./assets/style.css" />
+  <title>ちいさなメダル</title>
+
+  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./assets/icon-192.png" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <meta name="theme-color" content="#e8892f" />
+</head>
+<body>
+<main>
+  <section class="card">
+    <h1>ちいさなメダル</h1>
+
+    <div class="toolbar">
+      <input id="q" class="input" placeholder="検索（場所 / 入手方法 / メモ）" />
+      <select id="area" class="select">
+        <option value="all">エリア: 全て</option>
+      </select>
+      <select id="era" class="select">
+        <option value="all">時代: 全て</option>
+        <option value="過去">過去</option>
+        <option value="現代">現代</option>
+      </select>
+      <label class="chip" style="cursor:pointer;">
+        <input id="onlyUnchecked" type="checkbox" style="vertical-align:middle; margin-right:6px;">
+        未チェックのみ
+      </label>
+      <button id="reset" class="btn ghost" type="button">チェック全解除</button>
+    </div>
+
+    <div class="progress">
+      <div class="progress-row">
+        <div class="small">チェック数: <b id="done">0</b> / <b id="total">0</b></div>
+        <div class="small" id="pct">0%</div>
+      </div>
+      <progress id="bar" value="0" max="100"></progress>
+    </div>
+
+    <div id="out"></div>
+  </section>
+</main>
+
+<footer><div> </div></footer>
+
+<script type="module">
+  import { boot } from "./assets/app_common.js";
+  import { loadCSV } from "./assets/data.js";
+  import { qs, escapeHTML } from "./assets/util.js";
+
+  boot("ちいさなメダル | DQ7R");
+
+  const STORAGE_KEY = "dq7_medals_checked_v1";
+
+  const Q = qs("#q");
+  const AREA = qs("#area");
+  const ERA = qs("#era");
+  const ONLY = qs("#onlyUnchecked");
+  const RESET = qs("#reset");
+  const OUT = qs("#out");
+
+  const DONE = qs("#done");
+  const TOTAL = qs("#total");
+  const PCT = qs("#pct");
+  const BAR = qs("#bar");
+
+  function norm(s){ return (s||"").toLowerCase(); }
+
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return {};
+      const obj = JSON.parse(raw);
+      return (obj && typeof obj === "object") ? obj : {};
+    }catch(e){ return {}; }
+  }
+  function saveState(state){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+  }
+
+  function updateProgress(total, done){
+    TOTAL.textContent = String(total);
+    DONE.textContent = String(done);
+    const pct = total ? Math.round((done/total)*100) : 0;
+    PCT.textContent = pct + "%";
+    BAR.max = 100;
+    BAR.value = pct;
+  }
+
+  function renderTable(rows, state){
+    const thead = `
+      <thead><tr>
+        <th style="width:84px;">チェック</th>
+        <th style="width:72px;">時代</th>
+        <th>エリア</th>
+        <th>場所</th>
+        <th>入手</th>
+        <th>メモ</th>
+      </tr></thead>
+    `;
+
+    const tbody = `<tbody>${
+      rows.map(r=>{
+        const id = (r.medal_id||"").trim();
+        const checked = !!state[id];
+        const badge = checked ? `<span class="chip ok">済</span>` : `<span class="chip">未</span>`;
+        return `
+          <tr>
+            <td>
+              <label style="display:flex; gap:8px; align-items:center; cursor:pointer;">
+                <input type="checkbox" class="medal-cb" data-id="${escapeHTML(id)}" ${checked ? "checked" : ""}>
+                ${badge}
+              </label>
+            </td>
+            <td>${escapeHTML(r.era ?? "")}</td>
+            <td>${escapeHTML(r.area ?? "")}</td>
+            <td>${escapeHTML(r.location ?? "")}</td>
+            <td>${escapeHTML(r.how ?? "")}</td>
+            <td>${escapeHTML(r.notes ?? "")}</td>
+          </tr>
+        `;
+      }).join("")
+    }</tbody>`;
+
+    return `<div class="table-wrap"><table>${thead}${tbody}</table></div>`;
+  }
+
+  async function main(){
+    const medals = await loadCSV("./data/current/medals.csv");
+
+    const areas = Array.from(new Set(medals.map(r=>(r.area||"").trim()).filter(Boolean)))
+      .sort((a,b)=>a.localeCompare(b,"ja"));
+    AREA.innerHTML = `<option value="all">エリア: 全て</option>` + areas.map(a=>`<option value="${escapeHTML(a)}">${escapeHTML(a)}</option>`).join("");
+    const eras = Array.from(new Set(medals.map(r=>(r.era||"").trim()).filter(Boolean)));
+    const order = {"過去":1,"現代":2};
+    eras.sort((a,b)=> (order[a]||99) - (order[b]||99) || a.localeCompare(b,"ja"));
+    ERA.innerHTML = `<option value="all">時代: 全て</option>` + eras.map(e=>`<option value="${escapeHTML(e)}">${escapeHTML(e)}</option>`).join("");
+
+
+    let state = loadState();
+
+    function render(){
+      const q = norm(Q.value.trim());
+      const area = AREA.value;
+      const era = ERA.value;
+      const only = ONLY.checked;
+
+      const filtered = medals.filter(r=>{
+        const id = (r.medal_id||"").trim();
+        if (area !== "all" && (r.area||"").trim() !== area) return false;
+        if (era !== "all" && (r.era||"").trim() !== era) return false;
+        if (only && state[id]) return false;
+        if (!q) return true;
+        const blob = [r.medal_id,r.era,r.area,r.location,r.how,r.notes].join(" ").toLowerCase();
+        return blob.includes(q);
+      });
+
+      const total = medals.length;
+      const done = Object.keys(state).filter(k=>state[k]).length;
+      updateProgress(total, done);
+
+      OUT.innerHTML = renderTable(filtered, state) +
+        `<div class="small" style="margin-top:10px;">表示件数: ${filtered.length}</div>`;
+
+      OUT.querySelectorAll(".medal-cb").forEach(cb=>{
+        cb.addEventListener("change", (e)=>{
+          const id = e.target.getAttribute("data-id");
+          state[id] = e.target.checked;
+          saveState(state);
+          render();
+        });
+      });
+    }
+
+    RESET.addEventListener("click", ()=>{
+      state = {};
+      saveState(state);
+      render();
+    });
+
+    Q.addEventListener("input", render);
+    AREA.addEventListener("change", render);
+    ERA.addEventListener("change", render);
+    ONLY.addEventListener("change", render);
+
+    render();
+  }
+
+  main().catch(err=>{
+    OUT.innerHTML = `<div class="warn">${escapeHTML(err.message || String(err))}</div>`;
+  });
+</script>
+</body>
+</html>
