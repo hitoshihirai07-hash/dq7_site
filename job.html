@@ -30,23 +30,53 @@
   const id = getParam("id") || "";
   const WRAP = document.getElementById("wrap");
 
-  function norm(s){ return (s||"").toLowerCase(); }
+  function normalizePct_(v){
+    const s = (v ?? "").toString().trim();
+    if (!s) return "";
+    if (s.endsWith("%")) return s;
+    return s + "%";
+  }
+
+  function bonusRows_(job){
+    const rows = [
+      ["最大HP", normalizePct_(job.hp_pct)],
+      ["最大MP", normalizePct_(job.mp_pct)],
+      ["ちから", normalizePct_(job.str_pct)],
+      ["みのまもり", normalizePct_(job.def_pct)],
+      ["すばやさ", normalizePct_(job.agi_pct)],
+      ["かしこさ", normalizePct_(job.int_pct)],
+      ["かっこよさ", normalizePct_(job.charm_pct)],
+    ].filter(r => r[1] !== "");
+    return rows;
+  }
 
   async function main(){
     if (!id){
-      WRAP.innerHTML = `<div class="card"><h1>職業詳細</h1><div class="warn">URLに <span class="mono">?id=job_001</span> のように指定してください。</div></div>`;
+      WRAP.innerHTML = `
+        <div class="card">
+          <h1>職業詳細</h1>
+          <div class="small">URLに <span class="mono">?id=job_001</span> のように指定してください。</div>
+          <p class="small"><a href="./jobs.html">← 職業一覧へ</a></p>
+        </div>
+      `;
       return;
     }
 
     const [jobs, skills, jobSkills] = await Promise.all([
       loadCSV("./data/current/jobs.csv"),
       loadCSV("./data/current/skills.csv"),
-      loadCSV("./data/current/job_skills.csv")
+      loadCSV("./data/current/job_skills.csv"),
     ]);
 
     const job = byId(jobs, "job_id", id);
     if (!job){
-      WRAP.innerHTML = `<div class="card"><h1>職業詳細</h1><div class="warn">job_id=${escapeHTML(id)} が見つかりません。</div><p><a href="./jobs.html">← 職業一覧へ</a></p></div>`;
+      WRAP.innerHTML = `
+        <div class="card">
+          <h1>職業詳細</h1>
+          <div class="warn">指定された職業が見つかりません。</div>
+          <p class="small"><a href="./jobs.html">← 職業一覧へ</a></p>
+        </div>
+      `;
       return;
     }
 
@@ -56,50 +86,67 @@
     const learns = jobSkills
       .filter(js => (js.job_id||"") === id)
       .map(js=>{
-        const sk = skillById.get(js.skill_id) || {};
+        const s = skillById.get(js.skill_id);
         return {
-          learn_condition: js.learn_condition || "",
-          skill: sk.name || js.skill_id,
-          type: sk.type || "",
-          element: sk.element || "",
-          target: sk.target || "",
-          notes: (js.notes || sk.notes || "")
+          sort: parseInt(js.sort_order || "9999", 10) || 9999,
+          timing: js.timing || "",
+          skill_id: js.skill_id || "",
+          name: (s && s.name) ? s.name : (js.skill_id || ""),
+          type: (s && s.type) ? s.type : "",
+          notes: (s && s.notes) ? s.notes : ""
         };
-      });
+      })
+      .sort((a,b)=>a.sort-b.sort || a.name.localeCompare(b.name,"ja"));
 
-    const left = `
-      <section class="card">
-        <h1>${escapeHTML(job.name || "")}</h1>
-        <div class="small mono">${escapeHTML(job.job_id || "")}</div>
-        <p><b>分類：</b>${escapeHTML(job.group || "")}</p>
-        <p><b>解放条件</b><br>${escapeHTML(job.unlock_condition || "")}</p>
-        <p><b>職業とくせい</b><br>${escapeHTML(job.job_traits || "")}</p>
-        <p><b>メモ</b><br>${escapeHTML(job.notes || "")}</p>
-        <p class="small"><a href="./jobs.html">← 職業一覧へ戻る</a></p>
-      </section>
-    `;
-
-    const cols = [
-      { key:"learn_condition", label:"習得条件" },
-      { key:"skill", label:"特技/呪文" },
+    const learnCols = [
+      { key:"timing", label:"段階" },
+      {
+        key:"name", label:"習得",
+        render:(r)=> `<a href="./skill.html?id=${encodeURIComponent((r.skill_id||"").trim())}">${escapeHTML(r.name||"")}</a>`
+      },
       { key:"type", label:"種別" },
-      { key:"element", label:"属性" },
-      { key:"target", label:"対象" },
-      { key:"notes", label:"メモ" }
+      { key:"notes", label:"メモ" },
     ];
 
-    const right = `
-      <section class="card">
-        <h2>習得（特技/呪文）</h2>
-        ${learns.length ? makeTable(learns, cols) : `<div class="warn">習得データがまだありません。</div>`}
-      </section>
-    `;
+    const bRows = bonusRows_(job);
+    const bonusHtml = bRows.length ? `
+      <div class="card">
+        <h2>ステータス補正（%）</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>項目</th><th>補正</th></tr></thead>
+            <tbody>
+              ${bRows.map(r=>`<tr><td>${escapeHTML(r[0])}</td><td>${escapeHTML(r[1])}</td></tr>`).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    ` : "";
 
-    WRAP.innerHTML = left + right;
+    WRAP.innerHTML = `
+      <div class="card">
+        <h1>${escapeHTML(job.name || "")}</h1>
+        <div class="kv">
+          <div><div class="k">系統</div><div class="v">${escapeHTML(job.group || "")}</div></div>
+          <div><div class="k">条件</div><div class="v">${escapeHTML(job.unlock_condition || "")}</div></div>
+          <div><div class="k">特性</div><div class="v">${escapeHTML(job.job_traits || "")}</div></div>
+          <div><div class="k">メモ</div><div class="v">${escapeHTML(job.notes || "")}</div></div>
+        </div>
+        <p class="small"><a href="./jobs.html">← 職業一覧へ</a></p>
+      </div>
+
+      ${bonusHtml}
+
+      <div class="card">
+        <h2>習得（呪文・特技）</h2>
+        ${makeTable(learns, learnCols)}
+        <div class="small" style="margin-top:8px;">件数: ${learns.length}</div>
+      </div>
+    `;
   }
 
   main().catch(err=>{
-    WRAP.innerHTML = `<div class="card"><h1>職業詳細</h1><div class="warn">${escapeHTML(err.message || String(err))}</div></div>`;
+    WRAP.innerHTML = `<div class="card"><h1>職業詳細</h1><div class="warn">${escapeHTML(err.message || String(err))}</div><p class="small"><a href="./jobs.html">← 職業一覧へ</a></p></div>`;
   });
 </script>
 </body>
