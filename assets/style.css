@@ -59,7 +59,7 @@ header{
 .gsearch{
   position:relative;
   flex:1 1 320px;
-  max-width:520px;
+  max-width:560px;
   min-width:220px;
 }
 .gsearch input{

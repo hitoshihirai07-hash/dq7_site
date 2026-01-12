@@ -36,6 +36,7 @@
 
 <script type="module">
 
+
   import { boot } from "./assets/app_common.js";
   import { loadCSV } from "./assets/data.js";
   import { qs, escapeHTML } from "./assets/util.js";
@@ -45,6 +46,13 @@
   const Q = qs("#q");
   const ERA = qs("#era");
   const OUT = qs("#out");
+
+  const PARAMS = new URLSearchParams(location.search);
+  const QP = PARAMS.get("q") || "";
+  const ERAP = PARAMS.get("era") || "";
+  if (QP) Q.value = QP;
+  if (ERAP) ERA.value = ERAP;
+
 
   const COLS = [
     { key:"era", label:"時代" },
@@ -155,6 +163,7 @@
   main().catch(err=>{
     OUT.innerHTML = `<div class="warn">${escapeHTML(err.message || String(err))}</div>`;
   });
+
 
 </script>
 
