@@ -1,3 +1,0 @@
-boss_id,name,location,story_id,phase_count,hp,atk,def,agi,actions_summary,drop_items,exp,gold,notes,last_verified
-boss_001,ゴーレム,東の塔,st_012,1,260,35,18,0,通常攻撃/特技,,,,メモ例,2026-01-07
-boss_002,チョッキンガー,東の塔,st_013,1,,,,,,,,,,
