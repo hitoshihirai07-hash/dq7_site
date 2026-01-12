@@ -22,6 +22,7 @@
 </footer>
 
 <script type="module">
+
   import { boot } from "./assets/app_common.js";
   import { loadCSV, byId } from "./assets/data.js";
   import { getParam, escapeHTML, makeTable } from "./assets/util.js";
@@ -51,22 +52,41 @@
 
     document.title = `${ch.name || ch.chara_id} | キャラクター詳細`;
 
-    const skillById = new Map(skills.map(s=>[s.skill_id, s]));
+    const skillsById = new Map(skills.map(s=>[(s.skill_id||"").toString().trim(), s]).filter(x=>x[0]));
+    const skillsByName = new Map();
+    for (const s of skills){
+      const n = (s.name||"").toString().trim();
+      if (!n) continue;
+      if (!skillsByName.has(n)) skillsByName.set(n, s);
+    }
 
+    
     const rows = learns
       .filter(x => (x.chara_id || "") === id)
       .map(x=>{
-        const sk = skillById.get(x.skill_id) || {};
+        const rawId = (x.skill_id || "").toString().trim();
+        const rawName = (x.skill_name || x.name || "").toString().trim();
+
+        let sk = null;
+        if (rawId && skillsById.has(rawId)) sk = skillsById.get(rawId);
+        else if (rawName && skillsByName.has(rawName)) sk = skillsByName.get(rawName);
+
+        const sid = sk ? (sk.skill_id||"").toString().trim() : rawId;
+        const name = rawName || (sk ? (sk.name||"").toString().trim() : "") || rawId;
+
         return {
           lv: x.learn_level || "",
-          name: sk.name || x.skill_id,
-          type: sk.type || "",
-          element: sk.element || "",
-          target: sk.target || "",
-          notes: (x.notes || sk.notes || "")
+          skill_id: sid,
+          name,
+          type: sk ? (sk.type||"") : "",
+          element: sk ? (sk.element||"") : "",
+          target: sk ? (sk.target||"") : "",
+          notes: (x.notes || (sk ? (sk.notes||"") : "") || "")
         };
       })
+      .filter(r=> (r.name||"").toString().trim())
       .sort((a,b)=> Number(a.lv||0) - Number(b.lv||0) || String(a.name).localeCompare(String(b.name),"ja"));
+=> Number(a.lv||0) - Number(b.lv||0) || String(a.name).localeCompare(String(b.name),"ja"));
 
     const left = `
       <section class="card">
@@ -81,7 +101,7 @@
 
     const cols = [
       { key:"lv", label:"Lv" },
-      { key:"name", label:"特技/呪文" },
+      { key:"name", label:"特技/呪文", render:(r)=>{ const n = escapeHTML(r.name||""); const sid = (r.skill_id||"").trim(); return sid ? `<a href="./skill.html?id=${encodeURIComponent(sid)}">${n}</a>` : n; } },
       { key:"type", label:"種別" },
       { key:"element", label:"属性" },
       { key:"target", label:"対象" },
@@ -101,6 +121,7 @@
   main().catch(err=>{
     WRAP.innerHTML = `<div class="card"><h1>キャラクター詳細</h1><div class="warn">${escapeHTML(err.message || String(err))}</div></div>`;
   });
+
 </script>
 </body>
 </html>
