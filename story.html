@@ -42,10 +42,7 @@
   const COLS = [
     { key:"step_no", label:"手順" },
     { key:"location", label:"場所" },
-    { key:"objective", label:"目的" },
-    { key:"required_items", label:"必要" },
-    { key:"obtained_items", label:"入手" },
-    { key:"boss_id", label:"ボス" },
+    { key:"objective", label:"目的" },    { key:"boss_id", label:"ボス" },
     { key:"notes", label:"メモ" },
   ];
 
@@ -87,7 +84,7 @@
 
     const filtered = rows.filter(r=>{
       if (!q) return true;
-      const blob = [r.chapter,r.location,r.objective,r.notes,r.required_items,r.obtained_items,r.boss_id,r.step_no].join(" ").toLowerCase();
+      const blob = [r.chapter,r.location,r.objective,r.notes,r.boss_id,r.step_no].join(" ").toLowerCase();
       return blob.includes(q);
     });
 

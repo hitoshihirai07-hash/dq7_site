@@ -58,7 +58,13 @@
         if (c.key === "name"){
           const id = (r.item_id||"").trim();
           const name = r.name || r.item_id || "";
-          return `<td><a href="./item.html?id=${encodeURIComponent(id)}">${escapeHTML(name)}</a></td>`;
+          {
+          const sub = [];
+          if ((r.era||"").trim()) sub.push(`時代: ${escapeHTML(r.era)}`);
+          if ((r.obtain||"").trim()) sub.push(`入手: ${escapeHTML(r.obtain)}`);
+          const subHtml = sub.length ? `<div class="small">${sub.join(" / ")}</div>` : ``;
+          return `<td><a href="./item.html?id=${encodeURIComponent(id)}">${escapeHTML(name)}</a>${subHtml}</td>`;
+        }
         }
         return `<td>${escapeHTML(r[c.key] ?? "")}</td>`;
       }).join("")}</tr>`;
@@ -81,7 +87,7 @@
       const filtered = items.filter(r=>{
         if (cat !== "all" && (r.category||"").trim() !== cat) return false;
         if (!q) return true;
-        const blob = [r.name,r.effect,r.notes,r.category,r.slot].join(" ").toLowerCase();
+        const blob = [r.name,r.effect,r.notes,r.category,r.slot,r.era,r.obtain].join(" ").toLowerCase();
         return blob.includes(q);
       });
 
