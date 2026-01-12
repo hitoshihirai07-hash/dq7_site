@@ -75,6 +75,31 @@ function buildDisplay(sourceKey, obj, nameCol){
   return name;
 }
 
+
+function stripDecor(s){
+  return (s || "")
+    .toString()
+    .replace(/【[^】]*】/g, " ")
+    .replace(/#[0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildListQuery(sourceKey, obj, display){
+  if (sourceKey === "story_steps"){
+    const loc = (obj.location || "").toString().trim();
+    const objv = (obj.objective || "").toString().trim();
+    const chap = (obj.chapter || "").toString().trim();
+    return ([loc, objv, chap].filter(Boolean).join(" ").trim()) || stripDecor(display);
+  }
+  if (sourceKey === "medals"){
+    const loc = (obj.location || "").toString().trim();
+    const area = (obj.area || "").toString().trim();
+    return ([loc, area].filter(Boolean).join(" ").trim()) || stripDecor(display);
+  }
+  return stripDecor(display);
+}
+
 function buildURL(source, obj, display){
   const idCol = (source.id_col || "").trim();
   const detail = (source.detail_page || "").trim();
@@ -89,7 +114,7 @@ function buildURL(source, obj, display){
   if (list){
     // list page: pass q and (if exists) era / area for nicer jump
     const params = new URLSearchParams();
-    params.set("q", display);
+    params.set("q", buildListQuery(source.source_key, obj, display));
 
     if (source.source_key === "story_steps"){
       const era = (obj.era || "").toString().trim();
@@ -97,7 +122,9 @@ function buildURL(source, obj, display){
     }
     if (source.source_key === "medals"){
       const era = (obj.era || "").toString().trim();
+      const area = (obj.area || "").toString().trim();
       if (era) params.set("era", era);
+      if (area) params.set("area", area);
     }
 
     return `./${list}?${params.toString()}`;

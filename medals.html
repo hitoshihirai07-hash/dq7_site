@@ -49,6 +49,7 @@
 
 <script type="module">
 
+
   import { boot } from "./assets/app_common.js";
   import { loadCSV } from "./assets/data.js";
   import { qs, escapeHTML } from "./assets/util.js";
@@ -65,7 +66,8 @@
   const OUT = qs("#out");
 
   const PARAMS = new URLSearchParams(location.search);
-  const QP = PARAMS.get("q") || "";
+  const QP_RAW = PARAMS.get("q") || "";
+  const QP = (QP_RAW||"").toString().replace(/【[^】]*】/g," ").replace(/#[0-9]+/g," ").replace(/\s+/g," ").trim();
   const ERAP = PARAMS.get("era") || "";
   const AREAP = PARAMS.get("area") || "";
   if (QP) Q.value = QP;
@@ -204,6 +206,7 @@
   main().catch(err=>{
     OUT.innerHTML = `<div class="warn">${escapeHTML(err.message || String(err))}</div>`;
   });
+
 
 </script>
 </body>
