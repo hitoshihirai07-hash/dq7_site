@@ -19,6 +19,11 @@
 
     <div class="toolbar">
       <input id="q" class="input" placeholder="検索（章 / 場所 / 目的 / メモ）" />
+      <select id="era" class="select">
+        <option value="all">時代: 全て</option>
+        <option value="過去">過去</option>
+        <option value="現代">現代</option>
+      </select>
 </div>
 
     <div id="out" style="margin-top:12px;"></div>
@@ -37,6 +42,7 @@
   boot("ストーリー | DQ7R");
 
   const Q = qs("#q");
+  const ERA = qs("#era");
   const OUT = qs("#out");
 
   const COLS = [
@@ -80,9 +86,17 @@
 
   async function render(){
     const rows = await loadCSV("./data/current/story_steps.csv");
-    const q = norm(Q.value.trim());
+
+    const eras = Array.from(new Set(rows.map(r=>(r.era||"").trim()).filter(Boolean)));
+    const order = {"過去":1,"現代":2};
+    eras.sort((a,b)=> (order[a]||99)-(order[b]||99) || a.localeCompare(b,"ja"));
+    ERA.innerHTML = `<option value="all">時代: 全て</option>` + eras.map(e=>`<option value="${escapeHTML(e)}">${escapeHTML(e)}</option>`).join("");
+
+const q = norm(Q.value.trim());
+      const era = ERA.value;
 
     const filtered = rows.filter(r=>{
+        if (era !== "all" && (r.era||"").trim() !== era) return false;
       if (!q) return true;
       const blob = [r.chapter,r.location,r.objective,r.notes,r.boss_id,r.step_no].join(" ").toLowerCase();
       return blob.includes(q);
@@ -117,6 +131,7 @@
   }
 
   Q.addEventListener("input", render);
+    ERA.addEventListener("change", render);
   render();
 </script>
 
