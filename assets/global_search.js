@@ -114,7 +114,7 @@ function buildURL(source, obj, display){
   if (list){
     // list page: pass q and (if exists) era / area for nicer jump
     const params = new URLSearchParams();
-    params.set("q", buildListQuery(source.source_key, obj, display));
+    params.set("useq", "1");
 
     if (source.source_key === "story_steps"){
       const era = (obj.era || "").toString().trim();
@@ -265,7 +265,30 @@ export async function initGlobalSearch(){
     return html;
   }
 
-  async function onInput(){
+  
+  function handleUseQClick(e){
+    const t = e.target;
+    if (!(t instanceof Element)) return;
+    const a = t.closest("a.gsearch-item");
+    if (!a) return;
+
+    try{
+      const u = new URL(a.getAttribute("href"), location.href);
+      if (u.searchParams.get("useq") !== "1") return;
+
+      e.preventDefault();
+
+      const qraw = (input.value || "").toString().trim();
+      u.searchParams.delete("useq");
+      if (qraw) u.searchParams.set("q", qraw);
+
+      location.href = u.pathname + (u.search ? u.search : "");
+    }catch(err){
+      // fallback: do nothing
+    }
+  }
+
+async function onInput(){
     const q = norm(input.value);
     lastQ = q;
 
@@ -308,5 +331,6 @@ export async function initGlobalSearch(){
   input.addEventListener("input", onInput);
   input.addEventListener("focus", onInput);
   input.addEventListener("keydown", onKeydown);
+  panel.addEventListener("click", handleUseQClick);
   document.addEventListener("click", onDocClick);
 }
