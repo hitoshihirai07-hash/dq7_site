@@ -1,0 +1,4 @@
+resist_type_id,category,name,short,sort_order
+fire,呪文属性,メラ系,メラ,10
+ice,呪文属性,ヒャド系,ヒャド,20
+sleep,状態異常,眠り,眠,110
