@@ -14,6 +14,12 @@ export function renderHeader({title="DQ7R データベース", subtitle=""} = {}
           ${subHtml}
         </div>
       </div>
+
+      <div class="gsearch">
+        <input id="globalSearchInput" type="search" placeholder="用語検索（ボス/職業/キャラ/アイテム/呪文/特技）" autocomplete="off" />
+        <div id="globalSearchPanel" class="gsearch-panel" hidden></div>
+      </div>
+
       <nav>
         <a href="./index.html">トップ</a>
         <a href="./story.html">ストーリー</a>
