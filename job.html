@@ -23,14 +23,26 @@
 <script type="module">
 
 
+
+
   import { boot } from "./assets/app_common.js";
   import { loadCSV, byId } from "./assets/data.js";
   import { getParam, escapeHTML, makeTable } from "./assets/util.js";
+
+  function parseStage_(s){
+    const t = (s||"").toString();
+    const m = t.match(/[★☆]\s*([0-9]+)/);
+    if (m) return parseInt(m[1], 10) || 9999;
+    const m2 = t.match(/([0-9]+)\s*(?:段階|ステップ)/);
+    if (m2) return parseInt(m2[1], 10) || 9999;
+    return 9999;
+  }
 
   boot("職業詳細 | DQ7R");
 
   const id = getParam("id") || "";
   const WRAP = document.getElementById("wrap");
+
 
   function normalizePct_(v){
     const s = (v ?? "").toString().trim();
@@ -169,6 +181,7 @@ const learnCols = [
   main().catch(err=>{
     WRAP.innerHTML = `<div class="card"><h1>職業詳細</h1><div class="warn">${escapeHTML(err.message || String(err))}</div><p class="small"><a href="./jobs.html">← 職業一覧へ</a></p></div>`;
   });
+
 
 
 </script>
