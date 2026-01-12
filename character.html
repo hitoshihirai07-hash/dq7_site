@@ -50,7 +50,7 @@
       return;
     }
 
-    document.title = `${ch.name || ch.chara_id} | キャラクター詳細`;
+    document.title = `${ch.name || "キャラクター詳細"} | DQ7R`;
 
     const skillsById = new Map(skills.map(s=>[(s.skill_id||"").toString().trim(), s]).filter(x=>x[0]));
     const skillsByName = new Map();
@@ -86,13 +86,11 @@
       })
       .filter(r=> (r.name||"").toString().trim())
       .sort((a,b)=> Number(a.lv||0) - Number(b.lv||0) || String(a.name).localeCompare(String(b.name),"ja"));
-=> Number(a.lv||0) - Number(b.lv||0) || String(a.name).localeCompare(String(b.name),"ja"));
 
     const left = `
       <section class="card">
         <h1>${escapeHTML(ch.name || "")}</h1>
-        <div class="small mono">${escapeHTML(ch.chara_id || "")}</div>
-        <p><b>加入：</b>${escapeHTML(ch.join_chapter || "")}</p>
+<p><b>加入：</b>${escapeHTML(ch.join_chapter || "")}</p>
 <p><b>概要</b><br>${escapeHTML(ch.profile_short || "")}</p>
         <p><b>メモ</b><br>${escapeHTML(ch.notes || "")}</p>
         <p class="small"><a href="./characters.html">← キャラクター一覧へ戻る</a></p>
