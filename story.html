@@ -35,6 +35,7 @@
 </footer>
 
 <script type="module">
+
   import { boot } from "./assets/app_common.js";
   import { loadCSV } from "./assets/data.js";
   import { qs, escapeHTML } from "./assets/util.js";
@@ -46,6 +47,7 @@
   const OUT = qs("#out");
 
   const COLS = [
+    { key:"era", label:"時代" },
     { key:"step_no", label:"手順" },
     { key:"location", label:"場所" },
     { key:"objective", label:"目的" },
@@ -153,6 +155,7 @@
   main().catch(err=>{
     OUT.innerHTML = `<div class="warn">${escapeHTML(err.message || String(err))}</div>`;
   });
+
 </script>
 
 </body>

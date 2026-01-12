@@ -22,6 +22,7 @@
 </footer>
 <script type="module">
 
+
   import { boot } from "./assets/app_common.js";
   import { loadCSV, byId } from "./assets/data.js";
   import { getParam, escapeHTML, makeTable } from "./assets/util.js";
@@ -108,8 +109,8 @@
         const notes = s ? (s.notes||"").toString().trim() : ((js.notes||"").toString().trim());
 
         return {
-          sort: parseInt(js.sort_order || "9999", 10) || 9999,
-          timing: (js.timing||"").toString().trim(),
+          sort: (js.sort_order ? (parseInt(js.sort_order,10) || 9999) : parseStage_(js.learn_condition)),
+          timing: (js.learn_condition||js.timing||"").toString().trim(),
           skill_id: sid,
           name,
           type,
@@ -168,6 +169,7 @@ const learnCols = [
   main().catch(err=>{
     WRAP.innerHTML = `<div class="card"><h1>職業詳細</h1><div class="warn">${escapeHTML(err.message || String(err))}</div><p class="small"><a href="./jobs.html">← 職業一覧へ</a></p></div>`;
   });
+
 
 </script>
 </body>
