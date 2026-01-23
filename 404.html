@@ -2,52 +2,57 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="description" content="404">
-  <title>404 | Reflex Quiz Arena</title>
-  <link rel="stylesheet" href="/assets/style.css" />
-  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="./assets/style.css" />
+  <title>404 | DQ7R データベース</title>
+
+  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./assets/icon-192.png" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <meta name="theme-color" content="#e8892f" />  <meta name="description" content="ページが見つからない場合の案内ページです。" />
 </head>
 <body>
-  <div class="wrap">
-    <nav class="nav">
-  <a class="brand" href="/"><span class="brandMark">RQA</span><span class="brandText">Reflex Quiz Arena</span></a>
-  <div class="navLinks">
-    <a href="/play/">遊ぶ</a>
-    <a href="/rules/">ルール</a>
-    <a href="/mode/free/">フリー対戦</a>
-    <a href="/mode/rated/">レート対戦</a>
-    <a href="/faq/">FAQ</a>
-    <a href="/story/">ストーリー</a>
-    <a href="/stats/">戦績</a>
-  </div>
-</nav>
-    <main class="main">
-      
-<div class="hero">
-  <h1 class="h1">404</h1>
-  <p class="p">ページが見つかりませんでした。</p>
-  <div class="btnRow">
-    <a class="btn primary" href="/">トップへ</a>
-    <a class="btn ghost" href="/play/">遊ぶ</a>
-  </div>
-</div>
 
-    </main>
-    <footer class="footer">
-  <div class="footerGrid">
-    <div>
-      <div class="footerTitle">Reflex Quiz Arena</div>
-      <div class="muted">反射 × 脳トレ（計算・記憶・論理） 4人10問スコアバトル</div>
+<main>
+  <section class="card">
+    <h1>ページが見つかりません</h1>
+    <p class="small">URLが間違っているか、ページが移動・削除された可能性があります。</p>
+    <p class="small">上の用語検索から探すか、下のリンクから戻ってください。</p>
+
+    <div class="home-grid" style="margin-top:16px">
+      <a class="btn btn-lg" href="./index.html">トップ</a>
+      <a class="btn btn-lg" href="./story.html">ストーリー</a>
+
+      <a class="btn" href="./bosses.html">ボス</a>
+      <a class="btn" href="./characters.html">キャラクター</a>
+      <a class="btn" href="./jobs.html">職業</a>
+
+      <a class="btn" href="./items.html">アイテム</a>
+      <a class="btn btn-wide" href="./medals.html">ちいさなメダル</a>
+
+      <a class="btn btn-wide" href="./spells.html">呪文</a>
+      <a class="btn btn-wide" href="./skills.html">特技</a>
     </div>
-    <div class="footerLinks">
-      <a href="/privacy/">プライバシーポリシー</a>
-      <a href="/contact/">お問い合わせ</a>
+  </section>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-note">
+      <div class="footer-links">
+        <a href="./about.html">このサイトについて</a>
+        <a href="./privacy.html">プライバシーポリシー</a>
+        <a href="./contact.html">お問い合わせ</a>
+      </div>
+      <div class="small" style="margin-top:6px;">※非公式ファンサイトです。掲載情報は参考用です。</div>
     </div>
+    <div class="footer-copy small">© 2026 DQ7R データベース</div>
   </div>
-  <div class="tiny muted">© 2026 Reflex Quiz Arena</div>
 </footer>
-  </div>
-  <script src="/assets/config.js"></script>
+
+<script type="module">
+  import { boot } from "./assets/app_common.js";
+  boot("404 | DQ7R データベース");
+</script>
 </body>
 </html>
