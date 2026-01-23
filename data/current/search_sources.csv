@@ -1,8 +1,0 @@
-source_key,label,csv,id_col,name_col,detail_page,list_page,extra_cols,enabled
-bosses,ボス,bosses.csv,boss_id,name,boss.html,bosses.html,"location,story_id",1
-characters,キャラ,characters.csv,chara_id,name,character.html,characters.html,"role,notes",1
-jobs,職業,jobs.csv,job_id,name,job.html,jobs.html,"category,notes",1
-items,アイテム,items.csv,item_id,name,item.html,items.html,"category,slot,notes",1
-skills,呪文/特技,skills.csv,skill_id,name,skill.html,skills.html,"type,element,target,notes",1
-medals,メダル,medals.csv,medal_id,location,,medals.html,"era,area,how,notes",1
-story_steps,ストーリー,story_steps.csv,story_id,location,,story.html,"era,chapter,objective,notes,boss_id",1
