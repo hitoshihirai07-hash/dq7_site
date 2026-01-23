@@ -313,3 +313,26 @@ progress::-webkit-progress-value{background:rgba(232,137,47,.85); border-radius:
   .table-wrap table{white-space:nowrap; font-size:12px;}
   th,td{padding:8px 10px;}
 }
+
+/* ---- footer ---- */
+.footer-inner{
+  border-top:1px solid var(--line);
+  padding-top:12px;
+  margin-top:22px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  align-items:flex-start;
+  justify-content:space-between;
+}
+.footer-links{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:center;
+}
+.footer-note{max-width:760px;}
+.footer-copy{white-space:nowrap;}
+@media (max-width: 720px){
+  .footer-copy{width:100%;}
+}

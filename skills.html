@@ -9,12 +9,16 @@
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./assets/icon-192.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <meta name="theme-color" content="#e8892f" />
+  <meta name="theme-color" content="#e8892f" />  <meta name="description" content="DQ7R の特技一覧。検索・絞り込み対応。" />
 </head>
 <body>
 <main>
   <section class="card">
     <h1>特技</h1>
+
+    <p>特技を一覧表示します。検索で絞り込みできます。</p>
+<p class="small">※非公式ファンサイトです。掲載情報は参考用です。</p>
+
     <div class="toolbar">
       <input id="q" class="input" placeholder="検索（名前 / メモ）" />
 <select id="el" class="select">
@@ -25,7 +29,19 @@
   </section>
 </main>
 
-<footer><div> </div></footer>
+<footer>
+  <div class="footer-inner">
+    <div class="footer-note">
+      <div class="footer-links">
+        <a href="./about.html">このサイトについて</a>
+        <a href="./privacy.html">プライバシーポリシー</a>
+        <a href="./contact.html">お問い合わせ</a>
+      </div>
+      <div class="small" style="margin-top:6px;">※非公式ファンサイトです。掲載情報は参考用です。</div>
+    </div>
+    <div class="footer-copy small">© 2026 DQ7R データベース</div>
+  </div>
+</footer>
 
 <script type="module">
   import { boot } from "./assets/app_common.js";
