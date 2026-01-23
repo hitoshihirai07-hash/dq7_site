@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="description" content="反射 × 脳トレ（計算・記憶・論理） 4人10問スコアバトル">
-  <title>トップ | Reflex Quiz Arena</title>
+  <title>レート対戦 | Reflex Quiz Arena</title>
   <link rel="stylesheet" href="/assets/style.css" />
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
 </head>
@@ -25,45 +25,42 @@
     <main class="main">
       
 <div class="hero">
-  <div class="badge">4人×10問</div>
-  <h1 class="h1">Reflex Quiz Arena</h1>
-  <p class="p">反射 × 脳トレ（計算・記憶・論理） 4人10問スコアバトル</p>
+  <div class="badge orange">レート対戦</div>
+  <h1 class="h1">近い実力同士で対戦</h1>
+  <p class="p">レート対戦は近い実力（内部MMR）同士でマッチ。順位に応じてRP（表示ポイント）を獲得します。RPは減りません。</p>
   <div class="btnRow">
-    <a class="btn primary" href="/play/">今すぐ遊ぶ</a>
-    <a class="btn ghost" href="/rules/">ルールを見る</a>
+    <a class="btn warn" href="/play/">レート対戦を始める</a>
+    <a class="btn ghost" href="/rules/">ルール</a>
   </div>
 </div>
 
 <div class="grid grid2" style="margin-top:12px">
   <section class="card">
-    <div class="h2">どんなゲーム？</div>
-    <p class="p">
-      1試合は10問。計算・記憶・論理の問題を「4択」と「数字入力」で出題します。<br>
-      正解に加えて、早いほどボーナスが入るため、反射神経と判断力の両方が試されます。
-    </p>
+    <div class="h2">ポイント（RP）</div>
+    <ul class="list">
+      <li>1位：+30</li>
+      <li>2位：+15</li>
+      <li>3位：+5</li>
+      <li>4位：+0</li>
+    </ul>
     <div class="hr"></div>
-    <div class="badge green">止まらない設計</div>
-    <p class="p" style="margin-top:8px">
-      マッチング待ちでも画面が空になったり、ずっと「読み込み中」になることはありません。
-      いつでも練習へ切り替えられます。
-    </p>
+    <p class="p">マイナスはありません。勝った分だけ伸びます。</p>
   </section>
 
   <section class="card">
-    <div class="h2">モード</div>
+    <div class="h2">番狂わせボーナス</div>
+    <p class="p">格下（ロビー平均よりMMRが低い）ほど、上位入賞時のRPが少し増えます。</p>
+    <div class="hr"></div>
     <ul class="list">
-      <li><b>フリー対戦：</b>ランダムで気軽に対戦（レート変動なし）</li>
-      <li><b>レート対戦：</b>近い実力同士で対戦（格下勝ちは少し多めにポイント獲得）</li>
-      <li><b>練習（ソロ）：</b>いつでも即開始、感覚をつかむのに最適</li>
+      <li>1位：基本RP + ボーナス</li>
+      <li>2位：基本RP + ボーナスの半分</li>
+      <li>3位/4位：基本RPのみ</li>
     </ul>
   </section>
 </div>
 
 <div class="grid" style="margin-top:12px">
-  <div class="adSlot">
-    <b>広告スロット（審査後に有効化）</b><br>
-    <span class="small">操作ボタンの近くには置かず、説明ページ側に配置する前提の枠です。</span>
-  </div>
+  <div class="adSlot"><b>広告スロット</b><br><span class="small">説明ページ用。誤タップになりにくい配置前提。</span></div>
 </div>
 
     </main>

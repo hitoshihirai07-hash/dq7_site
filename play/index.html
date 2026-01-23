@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="description" content="404">
-  <title>404 | Reflex Quiz Arena</title>
+  <meta name="description" content="練習・フリー対戦・レート対戦の入口。10問で決着する4人スコアバトル。">
+  <title>遊ぶ | Reflex Quiz Arena</title>
   <link rel="stylesheet" href="/assets/style.css" />
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
 </head>
@@ -24,14 +24,24 @@
 </nav>
     <main class="main">
       
-<div class="hero">
-  <h1 class="h1">404</h1>
-  <p class="p">ページが見つかりませんでした。</p>
-  <div class="btnRow">
-    <a class="btn primary" href="/">トップへ</a>
-    <a class="btn ghost" href="/play/">遊ぶ</a>
-  </div>
+<div class="grid">
+    <section class="card" style="margin-bottom:12px">
+    <div class="h2">このページについて</div>
+    <p class="p">ここは対戦画面です。プレイには <b>JavaScript</b> が必要です。</p>
+    <ul class="list">
+      <li>操作方法：<a href="/rules/">ルール</a> / <a href="/faq/">FAQ</a></li>
+      <li>モード：練習（ソロ/ジャンル別）・CPU対戦・フリー対戦・レート対戦・ストーリー（ボス戦）</li>
+    </ul>
+    <noscript>
+      <div class="notice bad" style="margin-top:10px">
+        JavaScriptが無効になっています。ブラウザ設定でJavaScriptを有効にしてください。
+      </div>
+    </noscript>
+  </section>
+  <div id="app"></div>
 </div>
+<script src="/data/questions.js"></script>
+<script src="/assets/game.js"></script>
 
     </main>
     <footer class="footer">
