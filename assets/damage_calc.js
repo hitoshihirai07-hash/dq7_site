@@ -72,24 +72,44 @@ export function getResistMul(key, cfg) {
 // 既存式（係数は設定から反映）
 export function computeBaseDamage({ atk, def, mult = 1, cfg }) {
   const c = cfg || DEFAULT_DAMAGE_CONFIG;
-  const atkCoef = toNum(c?.formula?.atkCoef, 1);
-  const defCoef = toNum(c?.formula?.defCoef, 0.5);
+  const atkCoef = toNum(c?.formula?.atkCoef, 0.5);
+  const defCoef = toNum(c?.formula?.defCoef, 0.25);
 
-  const raw = (atk * atkCoef - def * defCoef) * mult;
-  return Math.floor(Math.max(0, raw));
+  // まず基本値（端数切り捨て）
+  const basic0 = Math.trunc(atk * atkCoef - def * defCoef);
+  // 技倍率を反映（端数切り捨て）
+  const basic = Math.trunc(basic0 * mult);
+
+  return basic;
 }
 
 export function computeDamageRange({ base, resistMul = 1, cfg }) {
-  const c = cfg || DEFAULT_DAMAGE_CONFIG;
-  const randMin = toNum(c?.rand?.min, 1);
-  const randMax = toNum(c?.rand?.max, 1);
+  // 幅 = 基本値 ÷ 16 + 1（Qiita式）
+  const b0 = Math.trunc(base);
 
-  let a = Math.floor(base * randMin * resistMul);
-  let b = Math.floor(base * randMax * resistMul);
-  if (a > b) [a, b] = [b, a];
-  const avg = (a + b) / 2;
-  return { min: a, max: b, avg };
+  // 無効は常に0
+  if (resistMul === 0) return { min: 0, max: 0, avg: 0 };
+
+  // 基本値が0以下でも最低1ダメージ扱い（物理想定）
+  const b = (b0 <= 0) ? 1 : b0;
+
+  const width = Math.trunc(Math.round(b / 16 + 1));
+  let minRaw = b - width;
+  let maxRaw = b + width;
+
+  // 最低ダメージ（0以下にならない）
+  if (minRaw < 1) minRaw = 1;
+
+  // 属性等の倍率を反映
+  const a = Math.trunc(minRaw * resistMul);
+  const c = Math.trunc(maxRaw * resistMul);
+
+  const min = Math.min(a, c);
+  const max = Math.max(a, c);
+  const avg = (min + max) / 2;
+  return { min, max, avg };
 }
+
 
 export function ceilDiv(a, b) {
   if (b === 0) return Infinity;

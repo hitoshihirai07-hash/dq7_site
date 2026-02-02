@@ -47,11 +47,31 @@
           <label class="small">攻撃力</label>
           <input id="atk" class="input" inputmode="numeric" placeholder="例: 120" />
         </div>
+        <div class="field" style="min-width:140px;">
+          <label class="small">攻撃上昇</label>
+          <select id="atkStage" class="select">
+            <option value="0">なし</option>
+            <option value="1">1段階</option>
+            <option value="2">2段階</option>
+          </select>
+        </div>
+
 
         <div class="field" style="min-width:130px;">
           <label class="small">相手守備力</label>
           <input id="def" class="input" inputmode="numeric" placeholder="例: 80" />
         </div>
+        <div class="field" style="min-width:140px;">
+          <label class="small">守備変化</label>
+          <select id="defStage" class="select">
+            <option value="0">なし</option>
+            <option value="-1">-1段階</option>
+            <option value="-2">-2段階</option>
+            <option value="1">+1段階</option>
+            <option value="2">+2段階</option>
+          </select>
+        </div>
+
 
         <div class="field" style="min-width:130px;">
           <label class="small">技倍率</label>
@@ -110,7 +130,9 @@
     resist: document.getElementById("resist"),
     bossInfo: document.getElementById("bossInfo"),
     atk: document.getElementById("atk"),
+    atkStage: document.getElementById("atkStage"),
     def: document.getElementById("def"),
+    defStage: document.getElementById("defStage"),
     mult: document.getElementById("mult"),
     hp: document.getElementById("hp"),
     out: document.getElementById("out"),
@@ -123,6 +145,13 @@
   let bosses = [];
   let resistTypes = [];
   let bossResists = [];
+
+
+  const ATK_STAGE_MUL = [1, 1.25, 1.5];
+  const DEF_STAGE_MUL = { "-2": 0.5, "-1": 0.75, "0": 1, "1": 1.25, "2": 1.5 };
+
+  function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
+
 
   function opt(v, label){
     const o = document.createElement("option");
@@ -229,8 +258,15 @@
   }
 
   function compute(){
-    const atk = toNum(EL.atk.value, 0);
-    const def = toNum(EL.def.value, 0);
+    const atk0 = toNum(EL.atk.value, 0);
+    const def0 = toNum(EL.def.value, 0);
+
+    const atkStage = clamp(parseInt((EL.atkStage?.value ?? "0"), 10) || 0, 0, 2);
+    const defStage = clamp(parseInt((EL.defStage?.value ?? "0"), 10) || 0, -2, 2);
+
+    const atk = atk0 * ATK_STAGE_MUL[atkStage];
+    const def = def0 * DEF_STAGE_MUL[String(defStage)];
+
     const mult = toNum(EL.mult.value, 1);
     const resistKey = (EL.resist.value || "normal").toString().trim();
     const resistMul = getResistMul(resistKey, cfg);
@@ -245,6 +281,8 @@
   function resetAll(){
     EL.atk.value = "";
     EL.def.value = "";
+    if (EL.atkStage) EL.atkStage.value = "0";
+    if (EL.defStage) EL.defStage.value = "0";
     EL.mult.value = "";
     EL.hp.value = "";
 

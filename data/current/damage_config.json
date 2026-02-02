@@ -1,8 +1,8 @@
 {
   "version": 1,
   "formula": {
-    "atkCoef": 1.0,
-    "defCoef": 0.5
+    "atkCoef": 0.5,
+    "defCoef": 0.25
   },
   "rand": {
     "min": 1.0,
