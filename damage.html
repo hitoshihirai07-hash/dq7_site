@@ -73,8 +73,18 @@
         </div>
 
 
+        <div class="field" style="min-width:220px;">
+          <label class="small">技（任意）</label>
+          <select id="skillSel" class="select"></select>
+        </div>
+
+        <div class="field" style="min-width:220px;">
+          <label class="small">武器（任意）</label>
+          <select id="weaponSel" class="select"></select>
+        </div>
+
         <div class="field" style="min-width:130px;">
-          <label class="small">技倍率</label>
+          <label class="small">倍率</label>
           <input id="mult" class="input" inputmode="decimal" placeholder="例: 1.00" />
         </div>
         <div class="field" style="min-width:140px;">
@@ -133,6 +143,8 @@
     atkStage: document.getElementById("atkStage"),
     def: document.getElementById("def"),
     defStage: document.getElementById("defStage"),
+    skillSel: document.getElementById("skillSel"),
+    weaponSel: document.getElementById("weaponSel"),
     mult: document.getElementById("mult"),
     hp: document.getElementById("hp"),
     out: document.getElementById("out"),
@@ -146,6 +158,8 @@
   let resistTypes = [];
   let bossResists = [];
 
+  let skills = [];
+  let items = [];
 
   const ATK_STAGE_MUL = [1, 1.25, 1.5];
   const DEF_STAGE_MUL = { "-2": 0.5, "-1": 0.75, "0": 1, "1": 1.25, "2": 1.5 };
@@ -153,11 +167,45 @@
   function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
 
 
-  function opt(v, label){
+    function opt(v, label){
     const o = document.createElement("option");
     o.value = v;
     o.textContent = label;
     return o;
+  }
+
+  function labelWeapon(it){
+    const name = (it.name || it.item_id || "").toString().trim();
+    const slot = (it.slot || "").toString().trim();
+    return slot ? `${name}（${slot}）` : name;
+  }
+
+  function hasMul(row){
+    const n = toNum(row?.damage_mul, NaN);
+    return Number.isFinite(n) && n > 0;
+  }
+
+  function updateMultFromSelections(){
+    if (!EL.skillSel || !EL.weaponSel) return;
+    const sid = (EL.skillSel.value || "").toString().trim();
+    const wid = (EL.weaponSel.value || "").toString().trim();
+
+    // 何も選んでいない場合は、手入力を尊重して上書きしない
+    if (!sid && !wid) return;
+
+    const s = sid ? skills.find(x => (x.skill_id || "").toString().trim() === sid) : null;
+    const w = wid ? items.find(x => (x.item_id || "").toString().trim() === wid) : null;
+
+    const sRaw = s ? toNum(s.damage_mul, NaN) : NaN;
+    const wRaw = w ? toNum(w.damage_mul, NaN) : NaN;
+
+    const sDefined = Number.isFinite(sRaw) && sRaw > 0;
+    const wDefined = Number.isFinite(wRaw) && wRaw > 0;
+
+    if (!sDefined && !wDefined) return;
+
+    const combined = (sDefined ? sRaw : 1) * (wDefined ? wRaw : 1);
+    EL.mult.value = Number.isFinite(combined) ? combined.toFixed(2) : "";
   }
 
   function fillDefaultIfEmpty(input, value){
@@ -283,6 +331,8 @@
     EL.def.value = "";
     if (EL.atkStage) EL.atkStage.value = "0";
     if (EL.defStage) EL.defStage.value = "0";
+    if (EL.skillSel) EL.skillSel.value = "";
+    if (EL.weaponSel) EL.weaponSel.value = "";
     EL.mult.value = "";
     EL.hp.value = "";
 
@@ -309,10 +359,12 @@
     // element dropdown
     EL.element.append(opt("", "（属性なし）"));
 
-    [bosses, resistTypes, bossResists] = await Promise.all([
+    [bosses, resistTypes, bossResists, skills, items] = await Promise.all([
       loadCSV("./data/current/bosses.csv"),
       loadCSV("./data/current/resist_types.csv"),
       loadCSV("./data/current/boss_resists.csv"),
+      loadCSV("./data/current/skills.csv"),
+      loadCSV("./data/current/items.csv"),
     ]);
 
     bosses
@@ -329,6 +381,36 @@
       .forEach(r=>{
         EL.element.append(opt(r.resist_type_id, `${r.short || r.name}`));
       });
+
+
+    // 技（倍率） dropdown（任意）
+    if (EL.skillSel){
+      EL.skillSel.append(opt("", "（技未選択）"));
+      skills
+        .filter(hasMul)
+        .slice()
+        .sort((a,b)=> (a.name||"").localeCompare((b.name||""), "ja"))
+        .forEach(s=>{
+          const name = (s.name || s.skill_id || "").toString().trim();
+          if (!name) return;
+          EL.skillSel.append(opt(s.skill_id, name));
+        });
+    }
+
+    // 武器（倍率） dropdown（任意）
+    if (EL.weaponSel){
+      EL.weaponSel.append(opt("", "（武器未選択）"));
+      items
+        .filter(it => (it.category || "").toString().trim() === "武器")
+        .filter(hasMul)
+        .slice()
+        .sort((a,b)=> (a.name||"").localeCompare((b.name||""), "ja"))
+        .forEach(it=>{
+          const name = labelWeapon(it);
+          if (!name) return;
+          EL.weaponSel.append(opt(it.item_id, name));
+        });
+    }
 
     // URL params: damage.html?boss=boss_001&element=fire
     const params = new URLSearchParams(location.search);
@@ -354,6 +436,9 @@
 
     EL.boss.addEventListener("change", ()=>{ setBossInfo(); applyBossDefaults(); applyResistFromBoss(); });
     EL.element.addEventListener("change", ()=>{ applyResistFromBoss(); });
+    if (EL.skillSel) EL.skillSel.addEventListener("change", updateMultFromSelections);
+    if (EL.weaponSel) EL.weaponSel.addEventListener("change", updateMultFromSelections);
+
     EL.calc.addEventListener("click", compute);
     EL.reset.addEventListener("click", resetAll);
 
