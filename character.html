@@ -70,7 +70,8 @@
 
     document.title = `${ch.name || "キャラクター詳細"} | DQ7R`;
     const join = (ch.join_chapter || "").toString().trim();
-    const others = characters.filter(x => (x.chara_id || "").toString().trim() && (x.chara_id || "").toString().trim() !== id);
+    // chars is the loaded list. (characters was a typo and caused runtime error.)
+    const others = chars.filter(x => (x.chara_id || "").toString().trim() && (x.chara_id || "").toString().trim() !== id);
     let cand = others;
     if (join){
       const same = others.filter(x => (x.join_chapter || "").toString().trim() === join);
