@@ -13,7 +13,7 @@
 </head>
 <body>
 <main>
-<div class="card" style="margin-bottom:12px;"><h1 style="margin-bottom:6px;">特技詳細</h1><p>特技の詳細情報を表示します。URLの <span class="mono">?id=</span> を指定すると該当ページを開けます。</p><p class="small">※非公式ファンサイトです。掲載情報は参考用です。</p></div>
+<div class="card" style="margin-bottom:12px;"><h1 style="margin-bottom:6px;">特技詳細</h1><p>呪文・特技一覧から選んで開けます。</p></div>
   <div id="wrap" class="grid two"></div>
 </main>
 
@@ -41,6 +41,13 @@
   const id = getParam("id") || "";
   const WRAP = document.getElementById("wrap");
 
+  const NA = '<span class="muted">—</span>';
+  const disp = (v)=>{
+    if (v === 0) return '0';
+    const s = (v ?? '').toString().trim();
+    return s ? escapeHTML(s) : NA;
+  };
+
   function listCard(title, rows){
     if (!rows.length) return `<div class="card"><h2>${escapeHTML(title)}</h2><div class="warn">なし</div></div>`;
     return `<div class="card"><h2>${escapeHTML(title)}</h2>
@@ -52,7 +59,7 @@
 
   async function main(){
     if (!id){
-      WRAP.innerHTML = `<div class="card"><h1>呪文・特技詳細</h1><div class="warn">URLに <span class="mono">?id=skill_001</span> のように指定してください。</div><p><a href="./skills.html">← 呪文・特技一覧へ</a></p></div>`;
+      WRAP.innerHTML = `<div class="card"><h1>呪文・特技詳細</h1><div class="warn">一覧から選んでください。</div><p><a href="./skills.html">← 呪文・特技一覧へ</a></p></div>`;
       return;
     }
 
@@ -74,6 +81,16 @@
 
     const jobById = new Map(jobs.map(j=>[j.job_id, j]));
     const charById = new Map(chars.map(c=>[c.chara_id, c]));
+
+    const typ = (s.type||'').toString().trim();
+    const others = skills.filter(x => (x.skill_id||'').toString().trim() && (x.skill_id||'').toString().trim() !== id);
+    let cand = others;
+    if (typ){
+      const same = others.filter(x => (x.type||'').toString().trim() === typ);
+      if (same.length) cand = same.concat(others.filter(x => (x.type||'').toString().trim() !== typ));
+    }
+    const related = cand.slice(0,3);
+    const relatedHtml = related.length ? related.map(x=>`<a class="chip" href="./skill.html?id=${encodeURIComponent((x.skill_id||'').toString().trim())}">${escapeHTML(x.name||x.skill_id||'')}<\/a>`).join(' ') : NA;
 
     const learnedByJobs = jobSkills
       .filter(r=>(r.skill_id||"")===id)
@@ -99,17 +116,19 @@
         <div class="small mono">${escapeHTML(s.skill_id || "")}</div>
 
         <p>
-          <b>種別：</b>${escapeHTML(s.type || "")}<br>
-          <b>属性：</b>${escapeHTML(s.element || "")}<br>
-          <b>対象：</b>${escapeHTML(s.target || "")}
+          <b>種別：</b>${disp(s.type)}<br>
+          <b>属性：</b>${disp(s.element)}<br>
+          <b>対象：</b>${disp(s.target)}
         </p>
 
         <p>
-          <b>効果量：</b>${escapeHTML(s.power || "")}<br>
-          <b>回数/命中：</b>${escapeHTML(s.hit || "")}
+          <b>効果量：</b>${disp(s.power)}<br>
+          <b>回数/命中：</b>${disp(s.hit)}
         </p>
 
-        <p><b>メモ</b><br>${escapeHTML(s.notes || "")}</p>
+        <p><b>メモ</b><br>${disp(s.notes)}</p>
+
+        <p><b>関連</b><br>${relatedHtml}</p>
 
         <p class="small"><a href="${(s.type||"").trim()==="呪文" ? "./spells.html" : "./skills.html"}">← 一覧へ戻る</a></p>
       </section>

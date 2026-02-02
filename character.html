@@ -14,7 +14,7 @@
 </head>
 <body>
 <main>
-<div class="card" style="margin-bottom:12px;"><h1 style="margin-bottom:6px;">キャラクター詳細</h1><p>キャラクターの詳細情報を表示します。URLの <span class="mono">?id=</span> を指定すると該当ページを開けます。</p><p class="small">※非公式ファンサイトです。掲載情報は参考用です。</p></div>
+<div class="card" style="margin-bottom:12px;"><h1 style="margin-bottom:6px;">キャラクター詳細</h1><p>キャラクター一覧から選んで開けます。</p></div>
   <div id="wrap" class="grid two"></div>
 </main>
 
@@ -43,9 +43,16 @@
   const id = getParam("id") || "";
   const WRAP = document.getElementById("wrap");
 
+  const NA = '<span class="muted">—</span>';
+  const disp = (v)=>{
+    if (v === 0) return '0';
+    const s = (v ?? '').toString().trim();
+    return s ? escapeHTML(s) : NA;
+  };
+
   async function main(){
     if (!id){
-      WRAP.innerHTML = `<div class="card"><h1>キャラクター詳細</h1><div class="warn">URLに <span class="mono">?id=ch_001</span> のように指定してください。</div></div>`;
+      WRAP.innerHTML = `<div class="card"><h1>キャラクター詳細</h1><div class="warn">キャラクター一覧から選んでください。</div></div>`;
       return;
     }
 
@@ -62,6 +69,17 @@
     }
 
     document.title = `${ch.name || "キャラクター詳細"} | DQ7R`;
+    const join = (ch.join_chapter || "").toString().trim();
+    const others = characters.filter(x => (x.chara_id || "").toString().trim() && (x.chara_id || "").toString().trim() !== id);
+    let cand = others;
+    if (join){
+      const same = others.filter(x => (x.join_chapter || "").toString().trim() === join);
+      if (same.length) cand = same.concat(others.filter(x => (x.join_chapter || "").toString().trim() !== join));
+    }
+    const related = cand.slice(0,3);
+    const relatedHtml = related.length
+      ? related.map(x => `<a class="chip" href="./character.html?id=${encodeURIComponent((x.chara_id || "").toString().trim())}">${escapeHTML(x.name || x.chara_id || "")}</a>`).join(' ')
+      : NA;
 
     const skillsById = new Map(skills.map(s=>[(s.skill_id||"").toString().trim(), s]).filter(x=>x[0]));
     const skillsByName = new Map();
@@ -101,9 +119,10 @@
     const left = `
       <section class="card">
         <h1>${escapeHTML(ch.name || "")}</h1>
-<p><b>加入：</b>${escapeHTML(ch.join_chapter || "")}</p>
-<p><b>概要</b><br>${escapeHTML(ch.profile_short || "")}</p>
-        <p><b>メモ</b><br>${escapeHTML(ch.notes || "")}</p>
+<p><b>加入：</b>${disp(ch.join_chapter)}</p>
+<p><b>概要</b><br>${disp(ch.profile_short)}</p>
+        <p><b>メモ</b><br>${disp(ch.notes)}</p>
+        <p><b>関連キャラクター</b><br>${relatedHtml}</p>
         <p class="small"><a href="./characters.html">← キャラクター一覧へ戻る</a></p>
       </section>
     `;
@@ -120,7 +139,7 @@
     const right = `
       <section class="card">
         <h2>Lvで覚える特技/呪文</h2>
-        ${rows.length ? makeTable(rows, cols) : `<div class="warn">データがまだありません。</div>`}
+        ${rows.length ? makeTable(rows, cols) : `<div class="warn">なし</div>`}
       </section>
     `;
 

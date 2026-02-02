@@ -14,7 +14,7 @@
 </head>
 <body>
 <main>
-<div class="card" style="margin-bottom:12px;"><h1 style="margin-bottom:6px;">ボス詳細</h1><p>ボスの詳細情報を表示します。URLの <span class="mono">?id=</span> を指定すると該当ページを開けます。</p><p class="small">※非公式ファンサイトです。掲載情報は参考用です。</p></div>
+<div class="card" style="margin-bottom:12px;"><h1 style="margin-bottom:6px;">ボス詳細</h1><p>ボス一覧から選んで開けます。</p></div>
   <div id="wrap" class="grid two"></div>
 </main>
 
@@ -41,6 +41,13 @@
 
   const id = getParam("id") || "";
   const WRAP = document.getElementById("wrap");
+
+  const NA = '<span class="muted">—</span>';
+  const disp = (v)=>{
+    if (v === 0) return '0';
+    const s = (v ?? '').toString().trim();
+    return s ? escapeHTML(s) : NA;
+  };
 
   const VALUE_LABEL = {
     weak: "弱点",
@@ -79,7 +86,7 @@
     );
 
     if (!enriched.length){
-      return `<div class="card"><div class="warn">耐性データがまだありません。</div></div>`;
+      return `<div class="card"><div class="warn">耐性データは未入力です。</div></div>`;
     }
 
     const grouped = groupBy(enriched, "category");
@@ -92,7 +99,7 @@
           <thead><tr><th>種別</th><th>耐性</th><th>メモ</th></tr></thead>
           <tbody>
             ${items.map(it=>{
-              const label = VALUE_LABEL[it.value] || it.value || "";
+              const label = VALUE_LABEL[it.value] || it.value || "—";
               return `<tr>
                 <td>${escapeHTML(it.name)}</td>
                 <td><span class="chip">${escapeHTML(label)}</span></td>
@@ -108,7 +115,7 @@
 
   async function main(){
     if (!id){
-      WRAP.innerHTML = `<div class="card"><h1>ボス詳細</h1><div class="warn">URLに <span class="mono">?id=boss_001</span> のように指定してください。</div><p><a href="./bosses.html">← ボス一覧へ</a></p></div>`;
+      WRAP.innerHTML = `<div class="card"><h1>ボス詳細</h1><div class="warn">ボス一覧から選んでください。</div><p><a href="./bosses.html">← ボス一覧へ</a></p></div>`;
       return;
     }
 
@@ -128,31 +135,43 @@
 
     const resists = bossResists.filter(r => (r.boss_id || "") === id);
 
+    const loc = (boss.location||"").toString().trim();
+    const others = bosses.filter(b => (b.boss_id||"").toString().trim() && (b.boss_id||"").toString().trim() !== id);
+    let cand = others;
+    if (loc){
+      const same = others.filter(b => (b.location||"").toString().trim() === loc);
+      if (same.length) cand = same.concat(others.filter(b => (b.location||"").toString().trim() !== loc));
+    }
+    const related = cand.slice(0,3);
+    const relatedHtml = related.length ? related.map(b=>`<a class="chip" href="./boss.html?id=${encodeURIComponent((b.boss_id||"").toString().trim())}">${escapeHTML(b.name||b.boss_id||"")}<\/a>`).join(' ') : NA;
+
     const left = `
       <section class="card">
         <h1>${escapeHTML(boss.name || "")}</h1>
         <div class="small mono">${escapeHTML(boss.boss_id || "")}</div>
 
         <p>
-          <b>場所：</b>${escapeHTML(boss.location || "")}<br>
-          <b>フェーズ：</b>${escapeHTML(boss.phase_count || "")}
+          <b>場所：</b>${disp(boss.location)}<br>
+          <b>フェーズ：</b>${disp(boss.phase_count)}
         </p>
 
         <p><b>ステータス</b><br>
-          HP：${escapeHTML(boss.hp || "")}　
-          攻撃：${escapeHTML(boss.atk || "")}　
-          防御：${escapeHTML(boss.def || "")}　
-          素早さ：${escapeHTML(boss.agi || "")}
+          HP：${disp(boss.hp)}　
+          攻撃：${disp(boss.atk)}　
+          防御：${disp(boss.def)}　
+          素早さ：${disp(boss.agi)}
         </p>
 
         <p>
           <a class="btn" href="./damage.html?boss=${encodeURIComponent(boss.boss_id || "")}">このボスでダメージ計算</a>
         </p>
 
-        <p><b>行動ざっくり</b><br>${escapeHTML(boss.actions_summary || "")}</p>
-        <p><b>ドロップ</b><br>${escapeHTML(boss.drop_items || "")}</p>
-        <p><b>経験値/ゴールド</b><br>${escapeHTML(boss.exp || "")} / ${escapeHTML(boss.gold || "")}</p>
-        <p><b>メモ</b><br>${escapeHTML(boss.notes || "")}</p>
+        <p><b>関連ボス</b><br>${relatedHtml}</p>
+
+        <p><b>行動ざっくり</b><br>${disp(boss.actions_summary)}</p>
+        <p><b>ドロップ</b><br>${disp(boss.drop_items)}</p>
+        <p><b>経験値/ゴールド</b><br>${disp(boss.exp)} / ${disp(boss.gold)}</p>
+        <p><b>メモ</b><br>${disp(boss.notes)}</p>
 
         <p class="small"><a href="./bosses.html">← ボス一覧へ戻る</a></p>
       </section>

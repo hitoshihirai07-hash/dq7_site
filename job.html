@@ -14,7 +14,7 @@
 </head>
 <body>
 <main>
-<div class="card" style="margin-bottom:12px;"><h1 style="margin-bottom:6px;">職業詳細</h1><p>職業の詳細情報を表示します。URLの <span class="mono">?id=</span> を指定すると該当ページを開けます。</p><p class="small">※非公式ファンサイトです。掲載情報は参考用です。</p></div>
+<div class="card" style="margin-bottom:12px;"><h1 style="margin-bottom:6px;">職業詳細</h1><p>職業一覧から選んで開けます。</p></div>
   <div id="wrap" class="grid two"></div>
 </main>
 
@@ -32,9 +32,6 @@
   </div>
 </footer>
 <script type="module">
-
-
-
 
   import { boot } from "./assets/app_common.js";
   import { loadCSV, byId } from "./assets/data.js";
@@ -54,6 +51,12 @@
   const id = getParam("id") || "";
   const WRAP = document.getElementById("wrap");
 
+  const NA = '<span class="muted">—</span>';
+  const disp = (v)=>{
+    if (v === 0) return '0';
+    const s = (v ?? '').toString().trim();
+    return s ? escapeHTML(s) : NA;
+  };
 
   function normalizePct_(v){
     const s = (v ?? "").toString().trim();
@@ -80,7 +83,7 @@
       WRAP.innerHTML = `
         <div class="card">
           <h1>職業詳細</h1>
-          <div class="small">URLのパラメータ（id）を指定してください。</div>
+          <div class="small">職業一覧から選んでください。</div>
           <p class="small"><a href="./jobs.html">← 職業一覧へ</a></p>
         </div>
       `;
@@ -107,7 +110,17 @@
 
     document.title = `${job.name || job.job_id} | 職業詳細`;
 
-    
+        const grp = (job.group||"").toString().trim();
+    const others = jobs.filter(x => (x.job_id||"").toString().trim() && (x.job_id||"").toString().trim() !== id);
+    let cand = others;
+    if (grp){
+      const same = others.filter(x => (x.group||"").toString().trim() === grp);
+      if (same.length) cand = same.concat(others.filter(x => (x.group||"").toString().trim() !== grp));
+    }
+    const related = cand.slice(0,3);
+    const relatedHtml = related.length ? related.map(x=>`<a class="chip" href="./job.html?id=${encodeURIComponent((x.job_id||"").toString().trim())}">${escapeHTML(x.name||x.job_id||"")}</a>`).join(' ') : NA;
+
+
     const skillsById = new Map(skills.map(s=>[(s.skill_id||"").toString().trim(), s]).filter(x=>x[0]));
     const skillsByName = new Map();
     for (const s of skills){
@@ -171,11 +184,12 @@ const learnCols = [
       <div class="card">
         <h1>${escapeHTML(job.name || "")}</h1>
         <div class="kv">
-          <div><div class="k">系統</div><div class="v">${escapeHTML(job.group || "")}</div></div>
-          <div><div class="k">条件</div><div class="v">${escapeHTML(job.unlock_condition || "")}</div></div>
-          <div><div class="k">特性</div><div class="v">${escapeHTML(job.job_traits || "")}</div></div>
-          <div><div class="k">メモ</div><div class="v">${escapeHTML(job.notes || "")}</div></div>
+          <div><div class="k">系統</div><div class="v">${disp(job.group)}</div></div>
+          <div><div class="k">条件</div><div class="v">${disp(job.unlock_condition)}</div></div>
+          <div><div class="k">特性</div><div class="v">${disp(job.job_traits)}</div></div>
+          <div><div class="k">メモ</div><div class="v">${disp(job.notes)}</div></div>
         </div>
+        <p><b>関連職業</b><br>${relatedHtml}</p>
         <p class="small"><a href="./jobs.html">← 職業一覧へ</a></p>
       </div>
 
@@ -192,8 +206,6 @@ const learnCols = [
   main().catch(err=>{
     WRAP.innerHTML = `<div class="card"><h1>職業詳細</h1><div class="warn">${escapeHTML(err.message || String(err))}</div><p class="small"><a href="./jobs.html">← 職業一覧へ</a></p></div>`;
   });
-
-
 
 </script>
 </body>

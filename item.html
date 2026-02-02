@@ -13,7 +13,7 @@
 </head>
 <body>
 <main>
-<div class="card" style="margin-bottom:12px;"><h1 style="margin-bottom:6px;">アイテム詳細</h1><p>アイテムの詳細情報を表示します。URLの <span class="mono">?id=</span> を指定すると該当ページを開けます。</p><p class="small">※非公式ファンサイトです。掲載情報は参考用です。</p></div>
+<div class="card" style="margin-bottom:12px;"><h1 style="margin-bottom:6px;">アイテム詳細</h1><p>アイテム一覧から選んで開けます。</p></div>
   <div id="wrap"></div>
 </main>
 
@@ -41,9 +41,17 @@
   const id = getParam("id") || "";
   const WRAP = document.getElementById("wrap");
 
+  const NA = '<span class="muted">—</span>';
+  const disp = (v)=>{
+    if (v === 0) return '0';
+    const s = (v ?? '').toString().trim();
+    return s ? escapeHTML(s) : NA;
+  };
+
   async function main(){
     if (!id){
-      WRAP.innerHTML = `<section class="card"><h1>アイテム詳細</h1><div class="warn">URLに <span class="mono">?id=item_001</span> のように指定してください。</div><p><a href="./items.html">← アイテム一覧へ</a></p></section>`;
+
+    WRAP.innerHTML = `<section class="card"><h1>アイテム詳細</h1><div class="warn">アイテム一覧から選んでください。</div><p><a href="./items.html">← アイテム一覧へ</a></p></section>`;
       return;
     }
 
@@ -57,31 +65,42 @@
 
     document.title = `${it.name || it.item_id} | アイテム詳細`;
 
+    const cat = (it.category||"").toString().trim();
+    const others = items.filter(x => (x.item_id||"").toString().trim() && (x.item_id||"").toString().trim() !== id);
+    let cand = others;
+    if (cat){
+      const same = others.filter(x => (x.category||"").toString().trim() === cat);
+      if (same.length) cand = same.concat(others.filter(x => (x.category||"").toString().trim() !== cat));
+    }
+    const related = cand.slice(0,3);
+    const relatedHtml = related.length ? related.map(x=>`<a class="chip" href="./item.html?id=${encodeURIComponent((x.item_id||"").toString().trim())}">${escapeHTML(x.name||x.item_id||"")}</a>`).join(' ') : NA;
+
     WRAP.innerHTML = `
       <section class="card">
         <h1>${escapeHTML(it.name || "")}</h1>
         <div class="small mono">${escapeHTML(it.item_id || "")}</div>
 
         <p>
-          <b>カテゴリ：</b>${escapeHTML(it.category || "")}<br>
-          <b>部位/種別：</b>${escapeHTML(it.slot || "")}
+          <b>カテゴリ：</b>${disp(it.category)}<br>
+          <b>部位/種別：</b>${disp(it.slot)}
           ${ (it.era||"").trim() ? `<br><b>時代：</b>${escapeHTML(it.era || "")}` : `` }
           ${ (it.obtain||"").trim() ? `<br><b>入手：</b>${escapeHTML(it.obtain || "")}` : `` }
 
         </p>
 
         <p>
-          <b>攻撃：</b>${escapeHTML(it.atk || "")}　
-          <b>防御：</b>${escapeHTML(it.def || "")}
+          <b>攻撃：</b>${disp(it.atk)}　
+          <b>防御：</b>${disp(it.def)}
         </p>
 
         <p>
-          <b>買値：</b>${escapeHTML(it.price_buy || "")}　
-          <b>売値：</b>${escapeHTML(it.price_sell || "")}
+          <b>買値：</b>${disp(it.price_buy)}　
+          <b>売値：</b>${disp(it.price_sell)}
         </p>
 
-        <p><b>効果</b><br>${escapeHTML(it.effect || "")}</p>
-        <p><b>メモ</b><br>${escapeHTML(it.notes || "")}</p>
+        <p><b>効果</b><br>${disp(it.effect)}</p>
+        <p><b>メモ</b><br>${disp(it.notes)}</p>
+        <p><b>関連アイテム</b><br>${relatedHtml}</p>
 
         <p class="small"><a href="./items.html">← アイテム一覧へ戻る</a></p>
       </section>

@@ -251,6 +251,7 @@ th,td{padding:10px 10px; border-bottom:1px solid var(--line); vertical-align:top
 th{position:sticky; top:0; background:#fff; text-align:left; font-weight:700}
 tr:hover td{background:#fffdf9}
 .small{font-size:12px; color:var(--muted)}
+.muted{color:var(--muted);}
 .chip{
   display:inline-flex; align-items:center;
   padding:4px 8px;
