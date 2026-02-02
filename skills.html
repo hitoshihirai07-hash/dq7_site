@@ -57,6 +57,7 @@
         { key:"element", label:"属性" },
     { key:"target", label:"対象" },
     { key:"power", label:"効果量" },
+    { key:"damage_mul", label:"倍率" },
     { key:"hit", label:"回数/命中" },
     { key:"notes", label:"メモ" }];
 
@@ -70,6 +71,10 @@
           const id = (r.skill_id||"").trim();
           const name = r.name || r.skill_id || "";
           return `<td><a href="./skill.html?id=${encodeURIComponent(id)}">${escapeHTML(name)}</a></td>`;
+        }
+        if (c.key === "damage_mul"){
+          const v = (r.damage_mul ?? "").toString().trim();
+          return `<td>${escapeHTML(v || "—")}</td>`;
         }
         return `<td>${escapeHTML(r[c.key] ?? "")}</td>`;
       }).join("")}</tr>`;

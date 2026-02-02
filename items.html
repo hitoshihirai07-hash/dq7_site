@@ -59,6 +59,7 @@
     { key:"slot", label:"部位/種別" },
     { key:"atk", label:"攻撃" },
     { key:"def", label:"防御" },
+    { key:"damage_mul", label:"倍率" },
     { key:"price_buy", label:"買値" },
     { key:"price_sell", label:"売値" },
     { key:"effect", label:"効果" },
@@ -80,6 +81,10 @@
           const subHtml = sub.length ? `<div class="small">${sub.join(" / ")}</div>` : ``;
           return `<td><a href="./item.html?id=${encodeURIComponent(id)}">${escapeHTML(name)}</a>${subHtml}</td>`;
         }
+        }
+        if (c.key === "damage_mul"){
+          const v = (r.damage_mul ?? "").toString().trim();
+          return `<td>${escapeHTML(v || "—")}</td>`;
         }
         return `<td>${escapeHTML(r[c.key] ?? "")}</td>`;
       }).join("")}</tr>`;
