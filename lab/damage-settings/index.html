@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="../shared/lab.css" />
+  <title>ダメージ計算 設定</title>
+</head>
+<body>
+<main class="wrap">
+  <div class="panel">
+    <h1>ダメージ計算 設定</h1>
+    <p class="muted">乱数範囲や耐性倍率など、計算の前提をまとめて編集して JSON として書き出します。</p>
+
+    <div class="grid" style="grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; margin-top:14px;">
+      <div class="card">
+        <h2>乱数</h2>
+        <div class="row">
+          <label class="small">最小</label>
+          <input id="randMin" class="input" inputmode="decimal" placeholder="1.00" />
+        </div>
+        <div class="row">
+          <label class="small">最大</label>
+          <input id="randMax" class="input" inputmode="decimal" placeholder="1.00" />
+        </div>
+        <p class="hint">※最小～最大の範囲でダメージを出力します。</p>
+      </div>
+
+      <div class="card">
+        <h2>式の係数</h2>
+        <div class="row">
+          <label class="small">攻撃係数</label>
+          <input id="atkCoef" class="input" inputmode="decimal" placeholder="1.00" />
+        </div>
+        <div class="row">
+          <label class="small">守備係数</label>
+          <input id="defCoef" class="input" inputmode="decimal" placeholder="0.50" />
+        </div>
+        <p class="hint">※必要なときだけ変更してください。</p>
+      </div>
+
+      <div class="card" style="grid-column: 1 / -1;">
+        <h2>耐性倍率</h2>
+        <div class="grid" style="grid-template-columns: repeat(5, minmax(0, 1fr)); gap:10px;">
+          <div>
+            <div class="small">弱点</div>
+            <input id="mulWeak" class="input" inputmode="decimal" placeholder="1.50" />
+          </div>
+          <div>
+            <div class="small">等倍</div>
+            <input id="mulNormal" class="input" inputmode="decimal" placeholder="1.00" />
+          </div>
+          <div>
+            <div class="small">半減</div>
+            <input id="mulHalf" class="input" inputmode="decimal" placeholder="0.50" />
+          </div>
+          <div>
+            <div class="small">無効</div>
+            <input id="mulImmune" class="input" inputmode="decimal" placeholder="0.00" />
+          </div>
+          <div>
+            <div class="small">吸収</div>
+            <input id="mulAbsorb" class="input" inputmode="decimal" placeholder="-1.00" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions" style="margin-top:16px; display:flex; gap:8px; flex-wrap:wrap;">
+      <button class="btn" id="btnReload" type="button">現在の設定を読み込み</button>
+      <button class="btn" id="btnSaveLocal" type="button">保存（端末内）</button>
+      <button class="btn primary" id="btnExport" type="button">JSONを書き出し</button>
+      <button class="btn" id="btnReset" type="button">リセット</button>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <h2>プレビュー</h2>
+      <pre id="preview" class="pre"></pre>
+      <div id="msg" class="muted" style="margin-top:8px;"></div>
+    </div>
+
+    <div style="margin-top:14px;">
+      <a class="muted" href="../index.html">← ラボ一覧へ戻る</a>
+    </div>
+  </div>
+</main>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>

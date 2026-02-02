@@ -10,88 +10,72 @@
   <link rel="apple-touch-icon" href="./assets/icon-192.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <meta name="theme-color" content="#e8892f" />
-  <meta name="description" content="攻撃力・防御力・倍率・乱数・耐性からダメージ範囲と討伐回数の目安を計算します。" />
+  <meta name="description" content="攻撃力・守備力・倍率からダメージ範囲を計算します（耐性・乱数込み）。" />
 </head>
 <body>
 <main>
   <div class="card">
     <h1>ダメージ計算</h1>
+
+    <p>攻撃力・守備力・技倍率（必要なら加算）から、ダメージの範囲を計算します。</p>
     <p class="small">※非公式ファンサイトです。掲載情報は参考用です。</p>
 
-    <div class="toolbar" style="flex-wrap:wrap; gap:8px">
-      <label class="small">ボス</label>
-      <select id="boss" class="select" style="min-width:220px"></select>
+    <div class="toolbar">
+      <div class="row" style="gap:10px; flex-wrap:wrap;">
+        <div class="field" style="min-width:220px;">
+          <label class="small">ボス（任意）</label>
+          <select id="boss" class="select"></select>
+        </div>
 
-      <label class="small">属性</label>
-      <select id="element" class="select" style="min-width:160px"></select>
+        <div class="field" style="min-width:160px;">
+          <label class="small">属性（任意）</label>
+          <select id="element" class="select"></select>
+        </div>
 
-      <label class="small">相手耐性</label>
-      <select id="resist" class="select" style="min-width:120px"></select>
+        <div class="field" style="min-width:140px;">
+          <label class="small">相手耐性</label>
+          <select id="resist" class="select"></select>
+        </div>
 
-      <label class="small">倍率</label>
-      <input id="resistMul" class="input" style="width:90px" inputmode="decimal" placeholder="1.0" />
+        <div class="small" id="bossInfo" style="align-self:flex-end; padding-bottom:6px;"></div>
+      </div>
     </div>
 
-    <div class="grid two" style="margin-top:12px">
-      <div>
-        <h2 style="margin:0 0 8px">入力</h2>
-
-        <div class="toolbar" style="flex-wrap:wrap; gap:8px">
+    <div class="toolbar">
+      <div class="row" style="gap:10px; flex-wrap:wrap;">
+        <div class="field" style="min-width:130px;">
           <label class="small">攻撃力</label>
-          <input id="atk" class="input" style="width:110px" inputmode="numeric" placeholder="例: 200" />
+          <input id="atk" class="input" inputmode="numeric" placeholder="例: 120" />
+        </div>
 
-          <label class="small">相手防御</label>
-          <input id="def" class="input" style="width:110px" inputmode="numeric" placeholder="例: 120" />
+        <div class="field" style="min-width:130px;">
+          <label class="small">相手守備力</label>
+          <input id="def" class="input" inputmode="numeric" placeholder="例: 80" />
+        </div>
 
+        <div class="field" style="min-width:130px;">
           <label class="small">技倍率</label>
-          <input id="mult" class="input" style="width:90px" inputmode="decimal" placeholder="1.0" />
-
-          <label class="small">固定加算</label>
-          <input id="add" class="input" style="width:90px" inputmode="numeric" placeholder="0" />
+          <input id="mult" class="input" inputmode="decimal" placeholder="例: 1.00" />
         </div>
 
-        <div class="toolbar" style="flex-wrap:wrap; gap:8px; margin-top:10px">
-          <label class="small">乱数(最小)</label>
-          <input id="randMin" class="input" style="width:90px" inputmode="decimal" placeholder="1.00" />
-
-          <label class="small">乱数(最大)</label>
-          <input id="randMax" class="input" style="width:90px" inputmode="decimal" placeholder="1.00" />
-
-          <label class="small">自分耐性</label>
-          <input id="selfMul" class="input" style="width:90px" inputmode="decimal" placeholder="1.00" />
-
-          <label class="small">敵HP</label>
-          <input id="hp" class="input" style="width:110px" inputmode="numeric" placeholder="任意" />
+        <div class="field" style="min-width:130px;">
+          <label class="small">加算（任意）</label>
+          <input id="add" class="input" inputmode="numeric" placeholder="例: 0" />
         </div>
 
-        <details style="margin-top:10px">
-          <summary style="cursor:pointer"><b>式設定（必要なら）</b> <span class="small">※ここだけ触れば「元の既存式」に合わせられます</span></summary>
-          <div class="toolbar" style="flex-wrap:wrap; gap:8px; margin-top:10px">
-            <label class="small">攻撃係数</label>
-            <input id="atkCoef" class="input" style="width:90px" inputmode="decimal" placeholder="1.0" />
-
-            <label class="small">防御係数</label>
-            <input id="defCoef" class="input" style="width:90px" inputmode="decimal" placeholder="0.5" />
-          </div>
-          <p class="small" style="margin:10px 0 0">
-            計算部は <code>assets/damage_calc.js</code> の <code>computeBaseDamage()</code> だけです。
-            あなたの既存式がある場合、そこを差し替えればこのページはそのまま使えます。
-          </p>
-        </details>
-
-        <div class="toolbar" style="margin-top:12px">
-          <button id="calc" class="btn">計算</button>
-          <button id="reset" class="btn btn-secondary" type="button">リセット</button>
-          <span id="bossInfo" class="small"></span>
+        <div class="field" style="min-width:140px;">
+          <label class="small">相手HP（任意）</label>
+          <input id="hp" class="input" inputmode="numeric" placeholder="例: 260" />
         </div>
-      </div>
 
-      <div>
-        <h2 style="margin:0 0 8px">結果</h2>
-        <div id="out" class="card" style="margin:0; padding:12px"></div>
+        <div style="display:flex; gap:8px; align-self:flex-end; padding-bottom:2px;">
+          <button id="btnCalc" class="btn primary" type="button">計算</button>
+          <button id="btnReset" class="btn" type="button">リセット</button>
+        </div>
       </div>
     </div>
 
+    <div id="out" style="margin-top:12px;"></div>
   </div>
 </main>
 
@@ -112,76 +96,59 @@
 <script type="module">
   import { boot } from "./assets/app_common.js";
   import { loadCSV } from "./assets/data.js";
-  import { escapeHTML, qs } from "./assets/util.js";
+  import { escapeHTML } from "./assets/util.js";
   import {
     RESIST_LABEL,
-    toNum,
+    DEFAULT_DAMAGE_CONFIG,
+    normalizeDamageConfig,
     getResistMul,
+    toNum,
     computeBaseDamage,
     computeDamageRange,
-    computeHitsToKill
+    computeHitsToKill,
   } from "./assets/damage_calc.js";
 
   boot("ダメージ計算 | DQ7R");
 
   const EL = {
-    boss: qs("#boss"),
-    element: qs("#element"),
-    resist: qs("#resist"),
-    resistMul: qs("#resistMul"),
-    atk: qs("#atk"),
-    def: qs("#def"),
-    mult: qs("#mult"),
-    add: qs("#add"),
-    randMin: qs("#randMin"),
-    randMax: qs("#randMax"),
-    selfMul: qs("#selfMul"),
-    hp: qs("#hp"),
-    atkCoef: qs("#atkCoef"),
-    defCoef: qs("#defCoef"),
-    out: qs("#out"),
-    bossInfo: qs("#bossInfo"),
-    calc: qs("#calc"),
-    reset: qs("#reset"),
+    boss: document.getElementById("boss"),
+    element: document.getElementById("element"),
+    resist: document.getElementById("resist"),
+    bossInfo: document.getElementById("bossInfo"),
+    atk: document.getElementById("atk"),
+    def: document.getElementById("def"),
+    mult: document.getElementById("mult"),
+    add: document.getElementById("add"),
+    hp: document.getElementById("hp"),
+    out: document.getElementById("out"),
+    calc: document.getElementById("btnCalc"),
+    reset: document.getElementById("btnReset"),
   };
 
-  function opt(value, label){
-    const o = document.createElement("option");
-    o.value = value;
-    o.textContent = label;
-    return o;
-  }
-
-  function renderOut({ base, range, resistMul, hits }){
-    const fmt = (n)=> (n==null || !Number.isFinite(n)) ? "—" : String(Math.round(n*100)/100);
-    const intFmt = (n)=> (n==null || !Number.isFinite(n)) ? "—" : String(n);
-
-    EL.out.innerHTML = `
-      <div class="small">相手耐性倍率: <b>${escapeHTML(fmt(resistMul))}</b></div>
-      <div style="margin-top:8px">
-        <div>基礎ダメージ: <b>${escapeHTML(intFmt(base))}</b></div>
-        <div>ダメージ範囲: <b>${escapeHTML(intFmt(range.min))}</b> ～ <b>${escapeHTML(intFmt(range.max))}</b>
-          <span class="small">（平均 ${escapeHTML(fmt(range.avg))}）</span>
-        </div>
-      </div>
-      <hr style="margin:12px 0; opacity:.2" />
-      <div>
-        <div>討伐回数の目安（敵HP入力時）</div>
-        <div class="small" style="margin-top:6px">
-          最短: <b>${escapeHTML(intFmt(hits.best))}</b>　/　平均: <b>${escapeHTML(intFmt(hits.avg))}</b>　/　最長: <b>${escapeHTML(intFmt(hits.worst))}</b>
-        </div>
-        <div class="small" style="margin-top:6px">※ダメージが0以下になる条件では回数は表示しません。</div>
-      </div>
-    `;
-  }
-
-  function fillDefaultIfEmpty(input, v){
-    if (!input.value) input.value = (v ?? "").toString();
-  }
+  let cfg = DEFAULT_DAMAGE_CONFIG;
 
   let bosses = [];
   let resistTypes = [];
   let bossResists = [];
+
+  function opt(v, label){
+    const o = document.createElement("option");
+    o.value = v;
+    o.textContent = label;
+    return o;
+  }
+
+  function fillDefaultIfEmpty(input, value){
+    const cur = (input.value || "").toString().trim();
+    const v = (value ?? "").toString().trim();
+    if (cur !== "") return;
+    if (v === "" || v === "null" || v === "undefined") return;
+    input.value = v;
+  }
+
+  function escape(s){
+    return escapeHTML((s ?? "").toString());
+  }
 
   function getSelectedBoss(){
     const id = (EL.boss.value || "").toString();
@@ -206,7 +173,6 @@
   function applyBossDefaults(){
     const b = getSelectedBoss();
     if (!b) return;
-    // 明確な入力があるときは上書きしない（事故防止）
     fillDefaultIfEmpty(EL.hp, b.hp);
     fillDefaultIfEmpty(EL.def, b.def);
   }
@@ -219,20 +185,54 @@
     const v = bossResistValue((b.boss_id || "").toString(), rt);
     if (!v) return;
 
-    // 抜け値は normal 扱い
     const key = ["weak","normal","half","immune","absorb"].includes(v) ? v : "normal";
     EL.resist.value = key;
   }
 
-  function syncResistMulUI(){
-    const key = (EL.resist.value || "normal").toString();
-    if (key === "custom"){
-      EL.resistMul.disabled = false;
-      EL.resistMul.placeholder = "1.0";
-      return;
+  function renderOut({ base, range, resistKey, resistMul, hits }){
+    const resistLabel = RESIST_LABEL[resistKey] || "等倍";
+
+    const hitsHtml = (hits.best || hits.avg || hits.worst) ? `
+      <div class="hr"></div>
+      <div class="row" style="gap:10px; flex-wrap:wrap;">
+        <div class="pill">撃破目安：最短 <b>${hits.best ?? "—"}</b></div>
+        <div class="pill">平均 <b>${hits.avg ?? "—"}</b></div>
+        <div class="pill">最長 <b>${hits.worst ?? "—"}</b></div>
+      </div>
+    ` : "";
+
+    EL.out.innerHTML = `
+      <div class="row" style="gap:10px; flex-wrap:wrap;">
+        <div class="pill">相手耐性：<b>${escape(resistLabel)}</b></div>
+        <div class="pill">耐性倍率：<b>${Number(resistMul).toFixed(2)}</b></div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="grid2" style="gap:10px;">
+        <div class="card" style="padding:12px;">
+          <div class="small">基礎ダメージ</div>
+          <div style="font-size:22px; font-weight:700;">${Math.round(base)}</div>
+        </div>
+        <div class="card" style="padding:12px;">
+          <div class="small">ダメージ範囲（乱数込み）</div>
+          <div style="font-size:22px; font-weight:700;">${range.min} ～ ${range.max}</div>
+          <div class="small" style="margin-top:4px;">平均：${Math.round(range.avg)}</div>
+        </div>
+      </div>
+
+      ${hitsHtml}
+    `;
+  }
+
+  async function loadConfig(){
+    try{
+      const r = await fetch("./data/current/damage_config.json", { cache: "no-store" });
+      if (!r.ok) return;
+      cfg = normalizeDamageConfig(await r.json());
+    }catch(e){
+      // ignore
     }
-    EL.resistMul.disabled = true;
-    EL.resistMul.value = "";
   }
 
   function compute(){
@@ -240,49 +240,46 @@
     const def = toNum(EL.def.value, 0);
     const mult = toNum(EL.mult.value, 1);
     const add = toNum(EL.add.value, 0);
-    const randMin = toNum(EL.randMin.value, 1);
-    const randMax = toNum(EL.randMax.value, 1);
-    const selfMul = toNum(EL.selfMul.value, 1);
-    const atkCoef = toNum(EL.atkCoef.value, 1);
-    const defCoef = toNum(EL.defCoef.value, 0.5);
+    const resistKey = (EL.resist.value || "normal").toString().trim();
+    const resistMul = getResistMul(resistKey, cfg);
 
-    const resistMul = getResistMul(EL.resist.value, EL.resistMul.value);
-
-    const base = computeBaseDamage({ atk, def, atkCoef, defCoef, mult, add });
-    const range = computeDamageRange({ base, randMin, randMax, resistMul, selfMul });
+    const base = computeBaseDamage({ atk, def, mult, add, cfg });
+    const range = computeDamageRange({ base, resistMul, cfg });
     const hits = computeHitsToKill({ hp: EL.hp.value, dmgMin: range.min, dmgMax: range.max, dmgAvg: range.avg });
 
-    renderOut({ base, range, resistMul, hits });
+    renderOut({ base, range, resistKey, resistMul, hits });
   }
 
   function resetAll(){
-    for (const k of Object.keys(EL)){
-      const el = EL[k];
-      if (!el) continue;
-      if (el.tagName === "INPUT") el.value = "";
-    }
-    EL.resist.value = "normal";
+    EL.atk.value = "";
+    EL.def.value = "";
+    EL.mult.value = "";
+    EL.add.value = "";
+    EL.hp.value = "";
+
     EL.boss.value = "";
     EL.element.value = "";
-    syncResistMulUI();
+    EL.resist.value = "normal";
     EL.bossInfo.textContent = "";
+
     EL.out.innerHTML = `<div class="small">入力して「計算」を押してください。</div>`;
   }
 
   async function init(){
-    // init dropdowns
+    await loadConfig();
+
+    // boss dropdown
     EL.boss.append(opt("", "（ボス未選択）"));
 
-    // Resist select
+    // resist dropdown
     for (const [k, label] of Object.entries(RESIST_LABEL)){
       EL.resist.append(opt(k, label));
     }
     EL.resist.value = "normal";
 
-    // Element select
+    // element dropdown
     EL.element.append(opt("", "（属性なし）"));
 
-    // load data
     [bosses, resistTypes, bossResists] = await Promise.all([
       loadCSV("./data/current/bosses.csv"),
       loadCSV("./data/current/resist_types.csv"),
@@ -304,11 +301,10 @@
         EL.element.append(opt(r.resist_type_id, `${r.short || r.name}`));
       });
 
-    // URLパラメータ（例: damage.html?boss=boss_001）
+    // URL params: damage.html?boss=boss_001&element=fire
     const params = new URLSearchParams(location.search);
     const bossParam = (params.get("boss") || "").toString().trim();
     const elemParam = (params.get("element") || "").toString().trim();
-    const resistParam = (params.get("resist") || "").toString().trim();
     const hpParam = (params.get("hp") || "").toString().trim();
     const defParam = (params.get("def") || "").toString().trim();
 
@@ -318,41 +314,20 @@
     if (elemParam && resistTypes.find(r=> (r.resist_type_id||"") === elemParam)){
       EL.element.value = elemParam;
     }
-    if (resistParam && Object.keys(RESIST_LABEL).includes(resistParam)){
-      EL.resist.value = resistParam;
-    }
     if (hpParam) fillDefaultIfEmpty(EL.hp, hpParam);
     if (defParam) fillDefaultIfEmpty(EL.def, defParam);
 
     setBossInfo();
     applyBossDefaults();
     applyResistFromBoss();
-    syncResistMulUI();
 
-    // defaults
     EL.out.innerHTML = `<div class="small">入力して「計算」を押してください。</div>`;
 
-    // events
-    EL.boss.addEventListener("change", ()=>{
-      setBossInfo();
-      applyBossDefaults();
-      applyResistFromBoss();
-      syncResistMulUI();
-    });
-
-    EL.element.addEventListener("change", ()=>{
-      applyResistFromBoss();
-      syncResistMulUI();
-    });
-
-    EL.resist.addEventListener("change", ()=>{
-      syncResistMulUI();
-    });
-
+    EL.boss.addEventListener("change", ()=>{ setBossInfo(); applyBossDefaults(); applyResistFromBoss(); });
+    EL.element.addEventListener("change", ()=>{ applyResistFromBoss(); });
     EL.calc.addEventListener("click", compute);
     EL.reset.addEventListener("click", resetAll);
 
-    // quick compute on Enter
     document.addEventListener("keydown", (e)=>{
       if (e.key === "Enter"){
         const t = e.target;
@@ -362,17 +337,10 @@
         }
       }
     });
-
-    syncResistMulUI();
-    setBossInfo();
-
-    // boss/element 指定がある場合は耐性も自動反映しておく
-    applyBossDefaults();
-    applyResistFromBoss();
   }
 
   init().catch(err=>{
-    EL.out.innerHTML = `<div class="warn">${escapeHTML(err.message || String(err))}</div>`;
+    EL.out.innerHTML = `<div class="warn">${escape(err.message || String(err))}</div>`;
   });
 </script>
 

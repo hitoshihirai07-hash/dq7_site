@@ -1,5 +1,4 @@
-// ダメージ計算の中核だけをまとめたファイル。
-// ここを差し替えれば、画面（damage.html）は触らずに「式」だけ変更できます。
+// ダメージ計算（サイト側の固定設定を使う）
 
 export const RESIST_LABEL = {
   weak: "弱点",
@@ -7,16 +6,25 @@ export const RESIST_LABEL = {
   half: "半減",
   immune: "無効",
   absorb: "吸収",
-  custom: "倍率入力",
 };
 
-// 倍率はデフォルト値（必要なら自由に変更OK）
-export const RESIST_MULT = {
-  weak: 1.5,
-  normal: 1,
-  half: 0.5,
-  immune: 0,
-  absorb: -1,
+export const DEFAULT_DAMAGE_CONFIG = {
+  version: 1,
+  formula: {
+    atkCoef: 1.0,
+    defCoef: 0.5,
+  },
+  rand: {
+    min: 1.0,
+    max: 1.0,
+  },
+  resistMult: {
+    weak: 1.5,
+    normal: 1.0,
+    half: 0.5,
+    immune: 0.0,
+    absorb: -1.0,
+  },
 };
 
 export function toNum(v, fallback = 0) {
@@ -26,22 +34,58 @@ export function toNum(v, fallback = 0) {
   return Number.isFinite(n) ? n : fallback;
 }
 
-export function getResistMul(resistValue, customMul) {
-  const key = (resistValue || "normal").toString().trim();
-  if (key === "custom") return toNum(customMul, 1);
-  return (RESIST_MULT[key] ?? 1);
+function clamp(n, lo, hi) {
+  if (!Number.isFinite(n)) return lo;
+  return Math.min(hi, Math.max(lo, n));
 }
 
-// --- ここが「式」の本体 ---
-// 既存の計算式があるなら、この関数だけ差し替えればOK。
-export function computeBaseDamage({ atk, def, atkCoef = 1, defCoef = 0.5, mult = 1, add = 0 }) {
+export function normalizeDamageConfig(cfg) {
+  const c = (cfg && typeof cfg === "object") ? cfg : {};
+  const out = JSON.parse(JSON.stringify(DEFAULT_DAMAGE_CONFIG));
+
+  // formula
+  out.formula.atkCoef = toNum(c?.formula?.atkCoef, out.formula.atkCoef);
+  out.formula.defCoef = toNum(c?.formula?.defCoef, out.formula.defCoef);
+
+  // rand
+  out.rand.min = toNum(c?.rand?.min, out.rand.min);
+  out.rand.max = toNum(c?.rand?.max, out.rand.max);
+  out.rand.min = clamp(out.rand.min, 0, 10);
+  out.rand.max = clamp(out.rand.max, 0, 10);
+
+  // resist
+  if (c?.resistMult && typeof c.resistMult === "object") {
+    for (const k of Object.keys(out.resistMult)) {
+      out.resistMult[k] = toNum(c.resistMult[k], out.resistMult[k]);
+    }
+  }
+
+  return out;
+}
+
+export function getResistMul(key, cfg) {
+  const k = (key || "normal").toString().trim();
+  const c = cfg || DEFAULT_DAMAGE_CONFIG;
+  return (c.resistMult && k in c.resistMult) ? c.resistMult[k] : (c.resistMult?.normal ?? 1);
+}
+
+// 既存式（係数は設定から反映）
+export function computeBaseDamage({ atk, def, mult = 1, add = 0, cfg }) {
+  const c = cfg || DEFAULT_DAMAGE_CONFIG;
+  const atkCoef = toNum(c?.formula?.atkCoef, 1);
+  const defCoef = toNum(c?.formula?.defCoef, 0.5);
+
   const raw = (atk * atkCoef - def * defCoef) * mult + add;
   return Math.floor(Math.max(0, raw));
 }
 
-export function computeDamageRange({ base, randMin = 1, randMax = 1, resistMul = 1, selfMul = 1 }) {
-  let a = Math.floor(base * randMin * resistMul * selfMul);
-  let b = Math.floor(base * randMax * resistMul * selfMul);
+export function computeDamageRange({ base, resistMul = 1, cfg }) {
+  const c = cfg || DEFAULT_DAMAGE_CONFIG;
+  const randMin = toNum(c?.rand?.min, 1);
+  const randMax = toNum(c?.rand?.max, 1);
+
+  let a = Math.floor(base * randMin * resistMul);
+  let b = Math.floor(base * randMax * resistMul);
   if (a > b) [a, b] = [b, a];
   const avg = (a + b) / 2;
   return { min: a, max: b, avg };

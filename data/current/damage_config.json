@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "formula": {
+    "atkCoef": 1.0,
+    "defCoef": 0.5
+  },
+  "rand": {
+    "min": 1.0,
+    "max": 1.0
+  },
+  "resistMult": {
+    "weak": 1.5,
+    "normal": 1.0,
+    "half": 0.5,
+    "immune": 0.0,
+    "absorb": -1.0
+  }
+}
