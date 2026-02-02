@@ -70,12 +70,12 @@ export function getResistMul(key, cfg) {
 }
 
 // 既存式（係数は設定から反映）
-export function computeBaseDamage({ atk, def, mult = 1, add = 0, cfg }) {
+export function computeBaseDamage({ atk, def, mult = 1, cfg }) {
   const c = cfg || DEFAULT_DAMAGE_CONFIG;
   const atkCoef = toNum(c?.formula?.atkCoef, 1);
   const defCoef = toNum(c?.formula?.defCoef, 0.5);
 
-  const raw = (atk * atkCoef - def * defCoef) * mult + add;
+  const raw = (atk * atkCoef - def * defCoef) * mult;
   return Math.floor(Math.max(0, raw));
 }
 

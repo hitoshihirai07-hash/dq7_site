@@ -17,7 +17,7 @@
   <div class="card">
     <h1>ダメージ計算</h1>
 
-    <p>攻撃力・守備力・技倍率（必要なら加算）から、ダメージの範囲を計算します。</p>
+    <p>攻撃力・守備力・技倍率から、ダメージの範囲を計算します。</p>
     
 
     <div class="toolbar">
@@ -57,12 +57,6 @@
           <label class="small">技倍率</label>
           <input id="mult" class="input" inputmode="decimal" placeholder="例: 1.00" />
         </div>
-
-        <div class="field" style="min-width:130px;">
-          <label class="small">加算（任意）</label>
-          <input id="add" class="input" inputmode="numeric" placeholder="例: 0" />
-        </div>
-
         <div class="field" style="min-width:140px;">
           <label class="small">相手HP（任意）</label>
           <input id="hp" class="input" inputmode="numeric" placeholder="例: 260" />
@@ -118,7 +112,6 @@
     atk: document.getElementById("atk"),
     def: document.getElementById("def"),
     mult: document.getElementById("mult"),
-    add: document.getElementById("add"),
     hp: document.getElementById("hp"),
     out: document.getElementById("out"),
     calc: document.getElementById("btnCalc"),
@@ -239,11 +232,10 @@
     const atk = toNum(EL.atk.value, 0);
     const def = toNum(EL.def.value, 0);
     const mult = toNum(EL.mult.value, 1);
-    const add = toNum(EL.add.value, 0);
     const resistKey = (EL.resist.value || "normal").toString().trim();
     const resistMul = getResistMul(resistKey, cfg);
 
-    const base = computeBaseDamage({ atk, def, mult, add, cfg });
+    const base = computeBaseDamage({ atk, def, mult, cfg });
     const range = computeDamageRange({ base, resistMul, cfg });
     const hits = computeHitsToKill({ hp: EL.hp.value, dmgMin: range.min, dmgMax: range.max, dmgAvg: range.avg });
 
@@ -254,7 +246,6 @@
     EL.atk.value = "";
     EL.def.value = "";
     EL.mult.value = "";
-    EL.add.value = "";
     EL.hp.value = "";
 
     EL.boss.value = "";
