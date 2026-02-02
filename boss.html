@@ -145,6 +145,10 @@
           素早さ：${escapeHTML(boss.agi || "")}
         </p>
 
+        <p>
+          <a class="btn" href="./damage.html?boss=${encodeURIComponent(boss.boss_id || "")}">このボスでダメージ計算</a>
+        </p>
+
         <p><b>行動ざっくり</b><br>${escapeHTML(boss.actions_summary || "")}</p>
         <p><b>ドロップ</b><br>${escapeHTML(boss.drop_items || "")}</p>
         <p><b>経験値/ゴールド</b><br>${escapeHTML(boss.exp || "")} / ${escapeHTML(boss.gold || "")}</p>

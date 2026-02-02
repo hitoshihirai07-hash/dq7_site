@@ -20,6 +20,7 @@ async function safeLoadCSV(path){
 
 function groupOrder(label){
   const order = {
+    "ツール": 0,
     "ボス": 1,
     "キャラ": 2,
     "職業": 3,
@@ -28,7 +29,6 @@ function groupOrder(label){
     "特技": 6,
     "呪文/特技": 7,
     "メダル": 8,
-    "ストーリー": 9,
     "その他": 99,
   };
   return order[label] || 99;
@@ -160,13 +160,13 @@ export async function initGlobalSearch(){
     }
     // fallback (shouldn't happen because file is shipped)
     return [
+      { source_key:"tool_damage", label:"ツール", csv:"", id_col:"", name_col:"", detail_page:"", list_page:"", extra_cols:"" },
       { source_key:"bosses", label:"ボス", csv:"bosses.csv", id_col:"boss_id", name_col:"name", detail_page:"boss.html", list_page:"bosses.html", extra_cols:"location,notes" },
       { source_key:"characters", label:"キャラ", csv:"characters.csv", id_col:"chara_id", name_col:"name", detail_page:"character.html", list_page:"characters.html", extra_cols:"notes" },
       { source_key:"jobs", label:"職業", csv:"jobs.csv", id_col:"job_id", name_col:"name", detail_page:"job.html", list_page:"jobs.html", extra_cols:"category,notes" },
       { source_key:"items", label:"アイテム", csv:"items.csv", id_col:"item_id", name_col:"name", detail_page:"item.html", list_page:"items.html", extra_cols:"category,slot,notes" },
       { source_key:"skills", label:"呪文/特技", csv:"skills.csv", id_col:"skill_id", name_col:"name", detail_page:"skill.html", list_page:"skills.html", extra_cols:"type,element,target,notes" },
       { source_key:"medals", label:"メダル", csv:"medals.csv", id_col:"medal_id", name_col:"location", detail_page:"", list_page:"medals.html", extra_cols:"era,area,how,notes" },
-      { source_key:"story_steps", label:"ストーリー", csv:"story_steps.csv", id_col:"story_id", name_col:"location", detail_page:"", list_page:"story.html", extra_cols:"era,chapter,objective,notes,boss_id" },
     ];
   }
 
@@ -185,7 +185,18 @@ export async function initGlobalSearch(){
     for (const s of sources){
       const file = (s.csv || "").toString().trim();
       const label = (s.label || "その他").toString().trim() || "その他";
-      if (!file) continue;
+      // allow virtual sources (tools)
+      if (!file){
+        if (s.source_key === "tool_damage"){
+          out.push({
+            group: "ツール",
+            name: "ダメージ計算",
+            key: norm("ダメージ 計算 計算機 dmg damage"),
+            url: "./damage.html"
+          });
+        }
+        continue;
+      }
 
       const data = await safeLoadCSV(dataUrl(file));
       if (!data) continue;
