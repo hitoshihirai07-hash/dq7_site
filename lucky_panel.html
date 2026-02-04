@@ -94,6 +94,14 @@
       100%{ box-shadow:0 0 0 0 rgba(232,137,47,.0); outline:2px solid rgba(232,137,47,.0); }
     }
 
+
+    /* prize list dropdown */
+    details.lp-details{ margin-top:10px; border:1px solid var(--line); border-radius:14px; padding:8px 10px; background:rgba(255,255,255,.55); }
+    details.lp-details>summary{ cursor:pointer; font-weight:900; padding:8px 6px; list-style:none; }
+    details.lp-details>summary::-webkit-details-marker{ display:none; }
+    details.lp-details[open]>summary{ margin-bottom:6px; }
+    details.lp-details>summary .small{ font-weight:700; color:var(--muted); margin-left:6px; }
+
     /* make recent line denser on mobile */
     @media (max-width: 560px){
       .chipbtn{ padding:7px 9px; font-size:12px; }
@@ -121,11 +129,12 @@
         <h2 style="margin:0">景品一覧</h2>
         <div class="lp-head-actions">
           <button id="jumpChecker" class="btn" type="button">チェックツールへ</button>
-          <button id="togglePrizes" class="btn" type="button" aria-pressed="true">景品一覧を隠す</button>
         </div>
       </div>
 
-      <div id="prizeBody">
+      <details id="prizeDetails" class="lp-details" open>
+        <summary>景品一覧 <span class="small">（タップで開閉）</span></summary>
+        <div id="prizeBody">
         <div class="lp-toolbar" style="margin-top:10px">
           <div class="seg" role="group" aria-label="時代">
             <button id="eraAll" type="button" aria-pressed="true">両方</button>
@@ -137,6 +146,7 @@
         <div class="hintline" style="margin-top:8px">※景品名を押すと、盤面チェックツールの「選択中」に反映されます。</div>
         <div id="prizeTable" style="margin-top:10px"></div>
       </div>
+      </details>
     </section>
 
     <hr style="margin:14px 0"/>
@@ -168,7 +178,11 @@
       </div>
 
       <div class="lp-toolbar" style="margin-top:6px">
-        <div class="hintline" id="selectedLabel">選択中：—（景品一覧 or 最近から選択）</div>
+        <label class="hintline" for="prizeSelect">景品</label>
+        <select id="prizeSelect" class="input" style="max-width:360px">
+          <option value="">— 選択 —</option>
+        </select>
+        <div class="hintline" id="selectedLabel">選択中：—（プルダウン/最近/景品一覧）</div>
         <button id="clearSel" class="btn" type="button">選択解除</button>
       </div>
 
@@ -215,8 +229,8 @@
   const btnPast2 = qs("#eraPast2");
   const btnNow2  = qs("#eraNow2");
 
-  const TogglePrizes = qs("#togglePrizes");
   const PrizeBody = qs("#prizeBody");
+  const PrizeDetails = qs("#prizeDetails");
   const JumpChecker = qs("#jumpChecker");
   const ToPrizes = qs("#toPrizes");
 
@@ -224,6 +238,7 @@
   const Board = qs("#board");
   const Recent = qs("#recent");
   const SelectedLabel = qs("#selectedLabel");
+  const PrizeSelect = qs("#prizeSelect");
   const ClearSelBtn = qs("#clearSel");
 
   const ClearBtn = qs("#clear");
@@ -291,31 +306,19 @@
   }
   if (ToPrizes){
     ToPrizes.addEventListener("click", ()=>{
+      if (PrizeDetails) PrizeDetails.open = true;
       const el = document.getElementById("prizes");
       if (el) el.scrollIntoView({ behavior:"smooth", block:"start" });
     });
   }
 
-  if (TogglePrizes && PrizeBody){
-    TogglePrizes.addEventListener("click", ()=>{
-      const isHidden = PrizeBody.hasAttribute("hidden");
-      if (isHidden){
-        PrizeBody.removeAttribute("hidden");
-        TogglePrizes.textContent = "景品一覧を隠す";
-        TogglePrizes.setAttribute("aria-pressed", "true");
-      } else {
-        PrizeBody.setAttribute("hidden","");
-        TogglePrizes.textContent = "景品一覧を表示";
-        TogglePrizes.setAttribute("aria-pressed", "false");
-      }
-    });
-  }
 
   function setSelectedPrize(name){
     selectedPrize = name || "";
     if (SelectedLabel){
-      SelectedLabel.textContent = "選択中：" + (selectedPrize ? selectedPrize : "—（景品一覧 or 最近から選択）");
+      SelectedLabel.textContent = "選択中：" + (selectedPrize ? selectedPrize : "—（プルダウン/最近/景品一覧）");
     }
+    if (PrizeSelect){ PrizeSelect.value = selectedPrize || ""; }
     // highlight in recent
     if (Recent){
       Array.from(Recent.querySelectorAll("button")).forEach(x=>{
@@ -329,24 +332,23 @@
   }
 
   function requestSelectPrize(){
-    // if prize list is hidden, show it
-    if (PrizeBody && PrizeBody.hasAttribute("hidden")){
-      PrizeBody.removeAttribute("hidden");
-      if (TogglePrizes){
-        TogglePrizes.textContent = "景品一覧を隠す";
-        TogglePrizes.setAttribute("aria-pressed", "true");
-      }
-    }
-    const el = document.getElementById("prizes");
-    if (el) el.scrollIntoView({ behavior:"smooth", block:"start" });
+    // Prefer dropdown near the checker (fast on mobile)
+    const checker = document.getElementById("checker");
+    if (checker) checker.scrollIntoView({ behavior:"smooth", block:"start" });
 
-    // flash prize area
-    const target = PrizeBody || el;
+    const target = PrizeSelect || null;
     if (target){
       target.classList.add("flash");
       if (flashTimer) clearTimeout(flashTimer);
       flashTimer = setTimeout(()=>target.classList.remove("flash"), 1300);
+      try { target.focus(); } catch(e){}
+      return;
     }
+
+    // fallback: open prize list
+    if (PrizeDetails) PrizeDetails.open = true;
+    const el = document.getElementById("prizes");
+    if (el) el.scrollIntoView({ behavior:"smooth", block:"start" });
   }
 
   function rowsForEraOnly(){
@@ -383,6 +385,62 @@
       { key:"ランク", label:"ランク", render:(r)=> escapeHTML(getRankLabel(r)) },
     ];
     PrizeTable.innerHTML = makeTable(filtered, cols) + `<div class="small" style="margin-top:10px">件数: ${filtered.length}</div>`;
+  }
+
+
+  function renderPrizeSelect(){
+    if (!PrizeSelect) return;
+    const base = rowsForEraOnly();
+    const seen = new Map(); // name -> rank
+    base.forEach(r=>{
+      const name = getPrizeName(r);
+      if (!name) return;
+      if (!seen.has(name)) seen.set(name, getRankLabel(r));
+    });
+    const rankOrder = {"宝箱":0,"ランク3":1,"ランク2":2,"ランク1":3};
+    const list = Array.from(seen.entries()).map(([name, rank])=>({name, rank})).sort((a,b)=>{
+      const oa = rankOrder[a.rank] ?? 9;
+      const ob = rankOrder[b.rank] ?? 9;
+      if (oa !== ob) return oa - ob;
+      return a.name.localeCompare(b.name, "ja");
+    });
+
+    const cur = selectedPrize || "";
+    // rebuild options
+    PrizeSelect.innerHTML = "";
+    const top = document.createElement("option");
+    top.value = "";
+    top.textContent = "— 選択 —";
+    PrizeSelect.appendChild(top);
+
+    const groups = new Map();
+    ["宝箱","ランク3","ランク2","ランク1"].forEach(rk=>{
+      const og = document.createElement("optgroup");
+      og.label = rk;
+      groups.set(rk, og);
+    });
+    const other = document.createElement("optgroup");
+    other.label = "その他";
+
+    list.forEach(({name, rank})=>{
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = rank ? `${name}（${rank}）` : name;
+      (groups.get(rank) || other).appendChild(opt);
+    });
+
+    ["宝箱","ランク3","ランク2","ランク1"].forEach(rk=>{
+      const og = groups.get(rk);
+      if (og && og.children.length) PrizeSelect.appendChild(og);
+    });
+    if (other.children.length) PrizeSelect.appendChild(other);
+
+    // restore selection if still available
+    if (cur && Array.from(PrizeSelect.options).some(o=>o.value===cur)){
+      PrizeSelect.value = cur;
+    } else {
+      PrizeSelect.value = "";
+    }
   }
 
   function renderRecent(){
@@ -465,6 +523,7 @@
 
   function render(){
     renderPrizeTable(filterRows());
+    renderPrizeSelect();
     renderRecent();
     // if selected prize no longer available in this era, clear selection
     if (selectedPrize){
@@ -474,6 +533,13 @@
   }
 
   if (Q) Q.addEventListener("input", render);
+  if (PrizeSelect) PrizeSelect.addEventListener("change", ()=>{
+    const name = PrizeSelect.value || "";
+    if (!name){ setSelectedPrize(""); return; }
+    pushRecent(name);
+    setSelectedPrize(name);
+    renderRecent();
+  });
   if (Size) Size.addEventListener("change", buildBoard);
   if (ClearBtn) ClearBtn.addEventListener("click", clearBoard);
 
