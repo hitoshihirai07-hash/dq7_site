@@ -36,7 +36,7 @@
 
   import { boot } from "./assets/app_common.js";
   import { loadCSV, byId } from "./assets/data.js";
-  import { getParam, escapeHTML, makeTable } from "./assets/util.js";
+  import { getParam, escapeHTML } from "./assets/util.js";
 
   boot("キャラクター詳細 | DQ7R");
 
@@ -56,10 +56,8 @@
       return;
     }
 
-    const [chars, skills, learns] = await Promise.all([
-      loadCSV("./data/current/characters.csv"),
-      loadCSV("./data/current/skills.csv"),
-      loadCSV("./data/current/chara_learns.csv")
+    const [chars] = await Promise.all([
+      loadCSV("./data/current/characters.csv")
     ]);
 
     const ch = byId(chars, "chara_id", id);
@@ -70,7 +68,6 @@
 
     document.title = `${ch.name || "キャラクター詳細"} | DQ7R`;
     const join = (ch.join_chapter || "").toString().trim();
-    // chars is the loaded list. (characters was a typo and caused runtime error.)
     const others = chars.filter(x => (x.chara_id || "").toString().trim() && (x.chara_id || "").toString().trim() !== id);
     let cand = others;
     if (join){
@@ -82,41 +79,6 @@
       ? related.map(x => `<a class="chip" href="./character.html?id=${encodeURIComponent((x.chara_id || "").toString().trim())}">${escapeHTML(x.name || x.chara_id || "")}</a>`).join(' ')
       : NA;
 
-    const skillsById = new Map(skills.map(s=>[(s.skill_id||"").toString().trim(), s]).filter(x=>x[0]));
-    const skillsByName = new Map();
-    for (const s of skills){
-      const n = (s.name||"").toString().trim();
-      if (!n) continue;
-      if (!skillsByName.has(n)) skillsByName.set(n, s);
-    }
-
-    
-    const rows = learns
-      .filter(x => (x.chara_id || "") === id)
-      .map(x=>{
-        const rawId = (x.skill_id || "").toString().trim();
-        const rawName = (x.skill_name || x.name || "").toString().trim();
-
-        let sk = null;
-        if (rawId && skillsById.has(rawId)) sk = skillsById.get(rawId);
-        else if (rawName && skillsByName.has(rawName)) sk = skillsByName.get(rawName);
-
-        const sid = sk ? (sk.skill_id||"").toString().trim() : rawId;
-        const name = rawName || (sk ? (sk.name||"").toString().trim() : "") || rawId;
-
-        return {
-          lv: x.learn_level || "",
-          skill_id: sid,
-          name,
-          type: sk ? (sk.type||"") : "",
-          element: sk ? (sk.element||"") : "",
-          target: sk ? (sk.target||"") : "",
-          notes: (x.notes || (sk ? (sk.notes||"") : "") || "")
-        };
-      })
-      .filter(r=> (r.name||"").toString().trim())
-      .sort((a,b)=> Number(a.lv||0) - Number(b.lv||0) || String(a.name).localeCompare(String(b.name),"ja"));
-
     const left = `
       <section class="card">
         <h1>${escapeHTML(ch.name || "")}</h1>
@@ -127,24 +89,7 @@
         <p class="small"><a href="./characters.html">← キャラクター一覧へ戻る</a></p>
       </section>
     `;
-
-    const cols = [
-      { key:"lv", label:"Lv" },
-      { key:"name", label:"特技/呪文", render:(r)=>{ const n = escapeHTML(r.name||""); const sid = (r.skill_id||"").trim(); return sid ? `<a href="./skill.html?id=${encodeURIComponent(sid)}">${n}</a>` : n; } },
-      { key:"type", label:"種別" },
-      { key:"element", label:"属性" },
-      { key:"target", label:"対象" },
-      { key:"notes", label:"メモ" }
-    ];
-
-    const right = `
-      <section class="card">
-        <h2>Lvで覚える特技/呪文</h2>
-        ${rows.length ? makeTable(rows, cols) : `<div class="warn">なし</div>`}
-      </section>
-    `;
-
-    WRAP.innerHTML = left + right;
+    WRAP.innerHTML = left;
   }
 
   main().catch(err=>{

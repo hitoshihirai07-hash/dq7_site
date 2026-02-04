@@ -58,25 +58,32 @@
     return s ? escapeHTML(s) : NA;
   };
 
-  function normalizePct_(v){
+  
+  function stageMark_(v){
     const s = (v ?? "").toString().trim();
-    if (!s) return "";
-    if (s.endsWith("%")) return s;
-    return s + "%";
+    if (!s) return "－";
+    // allow values like 10, -10, 0, 10%, +10%, ↑, ↓, －
+    if (s === "↑" || s === "↓" || s === "－") return s;
+    const num = parseFloat(s.replace("%",""));
+    if (Number.isNaN(num) || num === 0) return "－";
+    return num > 0 ? "↑" : "↓";
   }
 
   function bonusRows_(job){
     const rows = [
-      ["最大HP", normalizePct_(job.hp_pct)],
-      ["最大MP", normalizePct_(job.mp_pct)],
-      ["ちから", normalizePct_(job.str_pct)],
-      ["みのまもり", normalizePct_(job.def_pct)],
-      ["すばやさ", normalizePct_(job.agi_pct)],
-      ["かしこさ", normalizePct_(job.int_pct)],
-      ["かっこよさ", normalizePct_(job.charm_pct)],
-    ].filter(r => r[1] !== "");
+      ["HP", stageMark_(job.hp_pct)],
+      ["MP", stageMark_(job.mp_pct)],
+      ["攻撃力", stageMark_(job.str_pct)],
+      ["守備力", stageMark_(job.def_pct)],
+      ["攻撃魔力", stageMark_(job.atk_magic_pct ?? job.int_pct)],
+      ["回復魔力", stageMark_(job.heal_magic_pct)],
+      ["魅力", stageMark_(job.charm_pct)],
+      ["素早さ", stageMark_(job.agi_pct)],
+      ["器用さ", stageMark_(job.dex_pct)],
+    ];
     return rows;
   }
+
 
   async function main(){
     if (!id){
@@ -161,14 +168,13 @@ const learnCols = [
         key:"name", label:"習得",
         render:(r)=>{ const n = escapeHTML(r.name||""); const sid = (r.skill_id||"").trim(); return sid ? `<a href="./skill.html?id=${encodeURIComponent(sid)}">${n}</a>` : n; }
       },
-      { key:"type", label:"種別" },
       { key:"notes", label:"メモ" },
     ];
 
     const bRows = bonusRows_(job);
     const bonusHtml = bRows.length ? `
       <div class="card">
-        <h2>ステータス補正（%）</h2>
+        <h2>ステータス補正</h2>
         <div class="table-wrap">
           <table>
             <thead><tr><th>項目</th><th>補正</th></tr></thead>
