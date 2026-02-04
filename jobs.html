@@ -77,29 +77,33 @@
 
   function norm(s){ return (s||"").toLowerCase(); }
 
-  function formatBonus_(r){
-    const pairs = [
-      ["HP", r.hp_pct],
-      ["MP", r.mp_pct],
-      ["力", r.str_pct],
-      ["守", r.def_pct],
-      ["早", r.agi_pct],
-      ["賢", r.int_pct],
-      ["格", r.charm_pct],
-    ].filter(([k,v]) => (v ?? "").toString().trim() !== "");
-
-    if (!pairs.length) return "";
-
-    return pairs.map(([k,v]) => `${k}${normalizePct_(v)}`).join(" ");
+  function stageMark_(v){
+    const s = (v ?? "").toString().trim();
+    if (!s) return "－";
+    if (s === "↑" || s === "↓" || s === "－") return s;
+    if (s === "-") return "－";
+    // accept "+10", "10", "-10", "+10%", "10%" (legacy)
+    const num = parseFloat(s.replace("%",""));
+    if (Number.isNaN(num) || num === 0) return "－";
+    return num > 0 ? "↑" : "↓";
   }
 
-  function normalizePct_(v){
-    const s = (v ?? "").toString().trim();
-    if (!s) return "";
-    // allow "+10", "10", "-10", "+10%", "10%"
-    if (s.endsWith("%")) return s;
-    // keep + or -
-    return s + "%";
+  function formatBonus_(r){
+    const pairs = [
+      ["HP", stageMark_(r.hp_pct)],
+      ["MP", stageMark_(r.mp_pct)],
+      ["攻", stageMark_(r.str_pct)],
+      ["守", stageMark_(r.def_pct)],
+      ["攻魔", stageMark_(r.atk_magic_pct ?? r.int_pct)],
+      ["回魔", stageMark_(r.heal_magic_pct)],
+      ["魅", stageMark_(r.charm_pct)],
+      ["早", stageMark_(r.agi_pct)],
+      ["器", stageMark_(r.dex_pct)],
+    ];
+
+    const shown = pairs.filter(([k,v]) => v !== "－");
+    if (!shown.length) return "－";
+    return shown.map(([k,v]) => `${k}${v}`).join(" ");
   }
 
   async function main(){
@@ -119,7 +123,7 @@
         if (!q) return true;
         const blob = [
           r.job_id,r.name,r.group,r.unlock_condition,r.job_traits,r.notes,
-          r.hp_pct,r.mp_pct,r.str_pct,r.def_pct,r.agi_pct,r.int_pct,r.charm_pct
+          r.hp_pct,r.mp_pct,r.str_pct,r.def_pct,r.agi_pct,r.int_pct,r.charm_pct,r.atk_magic_pct,r.heal_magic_pct,r.dex_pct
         ].join(" ").toLowerCase();
         return blob.includes(q);
       });
