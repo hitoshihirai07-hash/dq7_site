@@ -1,3 +1,3 @@
 skill_id,name,type,element,power,hit,target,notes,last_verified,damage_mul
 sk_001,サンプル特技,特技,無,,,単体,メモ例,2026-01-07,
-sk_dragon_giri,ドラゴン斬り,特技,無,,,単体,倍率サンプル,2026-02-02,1.2
+,,,,,,,,,1.2
