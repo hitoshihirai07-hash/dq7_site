@@ -82,26 +82,17 @@
       text-underline-offset:2px;
     }
 
-    .overlay{
-      position:fixed; inset:0;
-      background:rgba(0,0,0,.35);
-      display:flex; align-items:flex-end; justify-content:center;
-      padding:12px;
-      z-index:9999;
-    }
-    .picker{
-      width:min(820px, 100%);
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:16px;
-      box-shadow:0 20px 50px rgba(0,0,0,.25);
-      padding:12px;
-      max-height:80vh;
-      overflow:auto;
-    }
-    .pickerHeader{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap}
-    .pickerTitle{font-weight:900; font-size:16px}
     .hintline{color:var(--muted); font-size:12px}
+
+    .flash{
+      animation: flash 1.2s ease-out 1;
+      border-radius:14px;
+    }
+    @keyframes flash{
+      0%{ box-shadow:0 0 0 0 rgba(232,137,47,.0); outline:2px solid rgba(232,137,47,.0); }
+      20%{ box-shadow:0 0 0 6px rgba(232,137,47,.12); outline:2px solid rgba(232,137,47,.35); }
+      100%{ box-shadow:0 0 0 0 rgba(232,137,47,.0); outline:2px solid rgba(232,137,47,.0); }
+    }
 
     /* make recent line denser on mobile */
     @media (max-width: 560px){
@@ -177,8 +168,8 @@
       </div>
 
       <div class="lp-toolbar" style="margin-top:6px">
-        <div class="hintline" id="selectedLabel">選択中：—</div>
-        <button id="openPicker" class="btn" type="button">景品を選ぶ</button>
+        <div class="hintline" id="selectedLabel">選択中：—（景品一覧 or 最近から選択）</div>
+        <button id="clearSel" class="btn" type="button">選択解除</button>
       </div>
 
       <div class="hintline" style="margin-top:8px">最近使った景品</div>
@@ -186,34 +177,7 @@
 
       <div id="board" class="board" aria-label="盤面"></div>
 
-      <div class="hintline">※マスを押す：配置 / 「消去：ON」なら消去 / 右クリック（PC）でも消去</div>
-
-      <div id="pickerOverlay" class="overlay" hidden>
-        <div class="picker" role="dialog" aria-modal="true" aria-label="景品を選ぶ">
-          <div class="pickerHeader">
-            <div class="pickerTitle">景品を選ぶ</div>
-            <button id="pickerClose" class="btn" type="button">閉じる</button>
-          </div>
-
-          <div class="lp-toolbar" style="margin-top:10px">
-            <div class="seg" role="group" aria-label="ランク（検索）">
-              <button id="prankAll" type="button" aria-pressed="true">全て</button>
-              <button id="prankBox" type="button" aria-pressed="false">宝箱</button>
-              <button id="prank3" type="button" aria-pressed="false">ランク3</button>
-              <button id="prank2" type="button" aria-pressed="false">ランク2</button>
-              <button id="prank1" type="button" aria-pressed="false">ランク1</button>
-            </div>
-            <input id="psearch" class="input" placeholder="景品名で検索" />
-            <button id="clearCell" class="btn" type="button" disabled>このマスを消去</button>
-          </div>
-
-          <div class="hintline" style="margin-top:8px">最近</div>
-          <div id="precent" class="palette"></div>
-
-          <div class="hintline" style="margin-top:8px">一覧</div>
-          <div id="plist" class="palette" style="max-height:42vh; overflow:auto"></div>
-        </div>
-      </div>
+      <div class="hintline">※マスを押す：選択中の景品を配置 / 「消去：ON」なら消去 / 右クリック（PC）でも消去</div>
     </section>
 
   </section>
@@ -260,20 +224,7 @@
   const Board = qs("#board");
   const Recent = qs("#recent");
   const SelectedLabel = qs("#selectedLabel");
-  const OpenPicker = qs("#openPicker");
-
-  const PickerOverlay = qs("#pickerOverlay");
-  const PickerClose = qs("#pickerClose");
-  const PSearch = qs("#psearch");
-  const PList = qs("#plist");
-  const PRecent = qs("#precent");
-  const ClearCellBtn = qs("#clearCell");
-
-  const prAll = qs("#prankAll");
-  const prBox = qs("#prankBox");
-  const pr3 = qs("#prank3");
-  const pr2 = qs("#prank2");
-  const pr1 = qs("#prank1");
+  const ClearSelBtn = qs("#clearSel");
 
   const ClearBtn = qs("#clear");
   const EraseBtn = qs("#erase");
@@ -283,8 +234,7 @@
   let rows = [];
   let selectedPrize = "";
   let recentPrizes = [];
-  let activeCell = null;
-  let pickerRank = "all";
+  let flashTimer = null;
 
   function norm(s){ return (s||"").toString().trim(); }
   function yn(v){
@@ -329,6 +279,10 @@
     EraseBtn.textContent = "消去：" + (eraseMode ? "ON" : "OFF");
   });
 
+  if (ClearSelBtn) ClearSelBtn.addEventListener("click", ()=>{
+    setSelectedPrize("");
+  });
+
   if (JumpChecker){
     JumpChecker.addEventListener("click", ()=>{
       const el = document.getElementById("checker");
@@ -360,7 +314,7 @@
   function setSelectedPrize(name){
     selectedPrize = name || "";
     if (SelectedLabel){
-      SelectedLabel.textContent = "選択中：" + (selectedPrize ? selectedPrize : "—");
+      SelectedLabel.textContent = "選択中：" + (selectedPrize ? selectedPrize : "—（景品一覧 or 最近から選択）");
     }
     // highlight in recent
     if (Recent){
@@ -372,6 +326,27 @@
   function pushRecent(name){
     if (!name) return;
     recentPrizes = [name, ...recentPrizes.filter(x=>x!==name)].slice(0, 12);
+  }
+
+  function requestSelectPrize(){
+    // if prize list is hidden, show it
+    if (PrizeBody && PrizeBody.hasAttribute("hidden")){
+      PrizeBody.removeAttribute("hidden");
+      if (TogglePrizes){
+        TogglePrizes.textContent = "景品一覧を隠す";
+        TogglePrizes.setAttribute("aria-pressed", "true");
+      }
+    }
+    const el = document.getElementById("prizes");
+    if (el) el.scrollIntoView({ behavior:"smooth", block:"start" });
+
+    // flash prize area
+    const target = PrizeBody || el;
+    if (target){
+      target.classList.add("flash");
+      if (flashTimer) clearTimeout(flashTimer);
+      flashTimer = setTimeout(()=>target.classList.remove("flash"), 1300);
+    }
   }
 
   function rowsForEraOnly(){
@@ -431,119 +406,6 @@
     });
   }
 
-  function setPickerRank(next){
-    pickerRank = next;
-    const press = (btn, on)=>{ if (btn) btn.setAttribute("aria-pressed", String(on)); };
-    press(prAll, next==="all");
-    press(prBox, next==="box");
-    press(pr3,  next==="r3");
-    press(pr2,  next==="r2");
-    press(pr1,  next==="r1");
-    renderPicker();
-  }
-  if (prAll) prAll.addEventListener("click", ()=>setPickerRank("all"));
-  if (prBox) prBox.addEventListener("click", ()=>setPickerRank("box"));
-  if (pr3) pr3.addEventListener("click", ()=>setPickerRank("r3"));
-  if (pr2) pr2.addEventListener("click", ()=>setPickerRank("r2"));
-  if (pr1) pr1.addEventListener("click", ()=>setPickerRank("r1"));
-
-  function openPicker(cell){
-    activeCell = cell;
-    if (ClearCellBtn){
-      ClearCellBtn.disabled = !activeCell;
-    }
-    if (PickerOverlay){
-      PickerOverlay.removeAttribute("hidden");
-      document.body.style.overflow = "hidden";
-    }
-    if (PSearch){
-      PSearch.value = "";
-      PSearch.focus();
-    }
-    setPickerRank("all");
-    renderPicker();
-  }
-  function closePicker(){
-    activeCell = null;
-    if (ClearCellBtn) ClearCellBtn.disabled = true;
-    if (PickerOverlay){
-      PickerOverlay.setAttribute("hidden","");
-      document.body.style.overflow = "";
-    }
-  }
-
-  if (PickerClose) PickerClose.addEventListener("click", closePicker);
-  if (PickerOverlay) PickerOverlay.addEventListener("click", (ev)=>{
-    if (ev.target === PickerOverlay) closePicker();
-  });
-  document.addEventListener("keydown", (ev)=>{
-    if (ev.key === "Escape" && PickerOverlay && !PickerOverlay.hasAttribute("hidden")) closePicker();
-  });
-
-  if (OpenPicker) OpenPicker.addEventListener("click", ()=>openPicker(null));
-
-  if (ClearCellBtn) ClearCellBtn.addEventListener("click", ()=>{
-    if (!activeCell) return;
-    activeCell.classList.add("empty");
-    activeCell.dataset.v = "";
-    activeCell.innerHTML = `<div class="t">?</div>`;
-    closePicker();
-  });
-
-  if (PSearch) PSearch.addEventListener("input", renderPicker);
-
-  function renderPicker(){
-    if (!PList || !PRecent) return;
-    const base = rowsForEraOnly().filter(r=>matchesRank(getRankLabel(r), pickerRank));
-    const q = norm(PSearch ? PSearch.value : "").toLowerCase();
-    const list = Array.from(new Set(base.map(r=>getPrizeName(r)).filter(Boolean)))
-      .filter(n=>!q || n.toLowerCase().includes(q));
-
-    // recents in picker
-    const available = new Set(list);
-    const rlist = recentPrizes.filter(n=>available.has(n)).slice(0, 12);
-    PRecent.innerHTML = "";
-    if (!rlist.length){
-      PRecent.innerHTML = `<span class="muted">—</span>`;
-    } else {
-      rlist.forEach(name=>{
-        const b = document.createElement("button");
-        b.type="button";
-        b.className="chipbtn";
-        b.textContent=name;
-        b.addEventListener("click", ()=>applyPrizeFromPicker(name));
-        PRecent.appendChild(b);
-      });
-    }
-
-    PList.innerHTML = "";
-    if (!list.length){
-      PList.innerHTML = `<span class="muted">該当なし</span>`;
-      return;
-    }
-    list.forEach(name=>{
-      const b = document.createElement("button");
-      b.type="button";
-      b.className="chipbtn";
-      b.textContent=name;
-      b.addEventListener("click", ()=>applyPrizeFromPicker(name));
-      PList.appendChild(b);
-    });
-  }
-
-  function applyPrizeFromPicker(name){
-    if (!name) return;
-    pushRecent(name);
-    setSelectedPrize(name);
-    if (activeCell){
-      activeCell.classList.remove("empty");
-      activeCell.dataset.v = name;
-      activeCell.innerHTML = `<div class="t">${escapeHTML(name)}</div>`;
-    }
-    closePicker();
-    renderRecent();
-  }
-
   function boardDims(){
     const v = Size ? Size.value : "4x4";
     if (v === "4x5") return [4,5];
@@ -572,7 +434,7 @@
             return;
           }
           if (!selectedPrize){
-            openPicker(b);
+            requestSelectPrize();
             return;
           }
           b.classList.remove("empty");
