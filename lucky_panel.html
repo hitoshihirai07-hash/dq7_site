@@ -12,7 +12,6 @@
   <meta name="theme-color" content="#e8892f" />
   <meta name="description" content="ラッキーパネルの景品一覧と盤面チェック用ツール。" />
   <style>
-}
 
     .lp-note{margin:0; padding-left:18px}
     .lp-note li{margin:4px 0}
@@ -71,6 +70,27 @@
   
     .lp-head{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
     .lp-head-actions{margin-left:auto; display:flex; gap:8px; flex-wrap:wrap}
+
+    .overlay{
+      position:fixed; inset:0;
+      background:rgba(0,0,0,.35);
+      display:flex; align-items:flex-end; justify-content:center;
+      padding:12px;
+      z-index:9999;
+    }
+    .picker{
+      width:min(820px, 100%);
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:16px;
+      box-shadow:0 20px 50px rgba(0,0,0,.25);
+      padding:12px;
+      max-height:80vh;
+      overflow:auto;
+    }
+    .pickerHeader{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap}
+    .pickerTitle{font-weight:900; font-size:16px}
+
 </style>
 </head>
 <body>
@@ -137,10 +157,53 @@
         <button id="erase" class="btn" type="button" aria-pressed="false">消去：OFF</button>
       </div>
 
-      <div class="hint">1) 景品を選ぶ → 2) マスを押して配置（消去ONなら消せます）</div>
-      <input id="pq" class="input" placeholder="景品を絞り込み（盤面用）" />
+      
+      <div class="hint">使い方：①景品を選ぶ（下のボタン or 一覧）→ ②マスを押して配置（消去ONなら消せます）</div>
 
+      <div class="lp-toolbar" style="margin-top:10px">
+        <div class="seg" role="group" aria-label="ランク（盤面）">
+          <button id="rankAll" type="button" aria-pressed="true">全て</button>
+          <button id="rankBox" type="button" aria-pressed="false">宝箱</button>
+          <button id="rank3" type="button" aria-pressed="false">ランク3</button>
+          <button id="rank2" type="button" aria-pressed="false">ランク2</button>
+          <button id="rank1" type="button" aria-pressed="false">ランク1</button>
+        </div>
+        <div class="hint" id="selectedLabel">選択中：—</div>
+        <button id="openPicker" class="btn" type="button">景品を探して選ぶ</button>
+      </div>
+
+      <div class="hint" style="margin-top:8px">最近使った景品</div>
+      <div id="recent" class="palette"></div>
+
+      <div class="hint" style="margin-top:8px">景品一覧（タップで選択）</div>
       <div id="palette" class="palette"></div>
+
+      <div id="pickerOverlay" class="overlay" hidden>
+        <div class="picker" role="dialog" aria-modal="true" aria-label="景品を選ぶ">
+          <div class="pickerHeader">
+            <div class="pickerTitle">景品を選ぶ</div>
+            <button id="pickerClose" class="btn" type="button">閉じる</button>
+          </div>
+
+          <div class="lp-toolbar" style="margin-top:10px">
+            <div class="seg" role="group" aria-label="ランク（検索）">
+              <button id="prankAll" type="button" aria-pressed="true">全て</button>
+              <button id="prankBox" type="button" aria-pressed="false">宝箱</button>
+              <button id="prank3" type="button" aria-pressed="false">ランク3</button>
+              <button id="prank2" type="button" aria-pressed="false">ランク2</button>
+              <button id="prank1" type="button" aria-pressed="false">ランク1</button>
+            </div>
+            <input id="psearch" class="input" placeholder="景品名で検索" />
+            <button id="clearCell" class="btn" type="button">このマスを消去</button>
+          </div>
+
+          <div class="hint" style="margin-top:8px">最近</div>
+          <div id="precent" class="palette"></div>
+
+          <div class="hint" style="margin-top:8px">一覧</div>
+          <div id="plist" class="palette" style="max-height:42vh"></div>
+        </div>
+      </div>
 
       <div id="board" class="board" aria-label="盤面"></div>
 
@@ -164,7 +227,6 @@
 
   const PrizeTable = qs("#prizeTable");
   const Q = qs("#q");
-  const PQ = qs("#pq");
 
   const btnAll = qs("#eraAll");
   const btnPast = qs("#eraPast");
@@ -181,6 +243,29 @@
   const Size = qs("#size");
   const Board = qs("#board");
   const Palette = qs("#palette");
+  const Recent = qs("#recent");
+  const SelectedLabel = qs("#selectedLabel");
+  const OpenPicker = qs("#openPicker");
+
+  const PickerOverlay = qs("#pickerOverlay");
+  const PickerClose = qs("#pickerClose");
+  const PSearch = qs("#psearch");
+  const PList = qs("#plist");
+  const PRecent = qs("#precent");
+  const ClearCellBtn = qs("#clearCell");
+
+  const rAll = qs("#rankAll");
+  const rBox = qs("#rankBox");
+  const r3 = qs("#rank3");
+  const r2 = qs("#rank2");
+  const r1 = qs("#rank1");
+
+  const prAll = qs("#prankAll");
+  const prBox = qs("#prankBox");
+  const pr3 = qs("#prank3");
+  const pr2 = qs("#prank2");
+  const pr1 = qs("#prank1");
+
 
   const ClearBtn = qs("#clear");
   const EraseBtn = qs("#erase");
@@ -189,6 +274,10 @@
   let era = "all"; // all | past | now
   let rows = [];
   let selectedPrize = "";
+  let rankFilter = "all"; // all | box | r3 | r2 | r1
+  let recentPrizes = [];
+  let activeCell = null;
+  let pickerRank = "all";
 
   function setEra(next){
     era = next;
@@ -243,6 +332,41 @@
     return t === "◯" || t === "○" || t.toLowerCase() === "yes" || t === "1" || t.toLowerCase() === "true";
   }
 
+  function getPrizeName(r){
+    return norm(r["景品"] || r["prize"] || r["name"]);
+  }
+  function getRankLabel(r){
+    return norm(r["ランク"] || r["rank"]);
+  }
+  function matchesRank(label, rf){
+    const t = norm(label);
+    if (rf==="all") return true;
+    if (rf==="box") return t==="宝箱";
+    if (rf==="r3") return t==="ランク3";
+    if (rf==="r2") return t==="ランク2";
+    if (rf==="r1") return t==="ランク1";
+    return true;
+  }
+  function setSelectedPrize(name){
+    selectedPrize = name || "";
+    if (SelectedLabel){
+      SelectedLabel.textContent = "選択中：" + (selectedPrize ? selectedPrize : "—");
+    }
+    // highlight pressed state
+    Array.from(Palette.querySelectorAll("button")).forEach(x=>{
+      x.setAttribute("aria-pressed", String(x.textContent===selectedPrize));
+    });
+    Array.from(Recent.querySelectorAll("button")).forEach(x=>{
+      x.setAttribute("aria-pressed", String(x.textContent===selectedPrize));
+    });
+  }
+  function pushRecent(name){
+    if (!name) return;
+    recentPrizes = [name, ...recentPrizes.filter(x=>x!==name)].slice(0, 12);
+  }
+
+
+
   async function load(){
     // Prefer renamed file without spaces; fallback to the original name if it exists.
     try {
@@ -272,17 +396,11 @@
     });
   }
 
-  function prizesForPalette(filteredRows){
-    const q = norm(PQ.value).toLowerCase();
-    const list = filteredRows
-      .filter(r=>{
-        const prize = norm(r["景品"] || r["prize"] || r["name"]).toLowerCase();
-        return !q || prize.includes(q);
-      })
-      .map(r=>norm(r["景品"] || r["prize"] || r["name"]))
+  function prizesForPalette(rowsForEra){
+    const list = rowsForEra
+      .filter(r=>matchesRank(getRankLabel(r), rankFilter))
+      .map(r=>getPrizeName(r))
       .filter(Boolean);
-
-    // unique
     return Array.from(new Set(list));
   }
 
@@ -294,6 +412,165 @@
       { key:"ランク", label:"ランク", render:(r)=> escapeHTML(norm(r["ランク"] || r["rank"])) },
     ];
     PrizeTable.innerHTML = makeTable(filtered, cols);
+  }
+
+
+
+  function setRank(next){
+    rankFilter = next;
+    const setPressed = (btn, on)=> btn && btn.setAttribute("aria-pressed", String(on));
+    setPressed(rAll, next==="all");
+    setPressed(rBox, next==="box");
+    setPressed(r3,  next==="r3");
+    setPressed(r2,  next==="r2");
+    setPressed(r1,  next==="r1");
+    renderChecker();
+  }
+
+  function setPickerRank(next){
+    pickerRank = next;
+    const setPressed = (btn, on)=> btn && btn.setAttribute("aria-pressed", String(on));
+    setPressed(prAll, next==="all");
+    setPressed(prBox, next==="box");
+    setPressed(pr3,  next==="r3");
+    setPressed(pr2,  next==="r2");
+    setPressed(pr1,  next==="r1");
+    renderPicker();
+  }
+
+  if (rAll) rAll.addEventListener("click", ()=>setRank("all"));
+  if (rBox) rBox.addEventListener("click", ()=>setRank("box"));
+  if (r3)  r3.addEventListener("click", ()=>setRank("r3"));
+  if (r2)  r2.addEventListener("click", ()=>setRank("r2"));
+  if (r1)  r1.addEventListener("click", ()=>setRank("r1"));
+
+  if (prAll) prAll.addEventListener("click", ()=>setPickerRank("all"));
+  if (prBox) prBox.addEventListener("click", ()=>setPickerRank("box"));
+  if (pr3)  pr3.addEventListener("click", ()=>setPickerRank("r3"));
+  if (pr2)  pr2.addEventListener("click", ()=>setPickerRank("r2"));
+  if (pr1)  pr1.addEventListener("click", ()=>setPickerRank("r1"));
+
+  function rowsForEraOnly(){
+    return rows.filter(r=>{
+      const pastOk = yn(r["ダーマ旅の宿過去"] ?? r["past"]);
+      const nowOk  = yn(r["ダーマ旅の宿現代"] ?? r["now"]);
+      if (era === "past" && !pastOk) return false;
+      if (era === "now"  && !nowOk) return false;
+      return true;
+    });
+  }
+
+  function renderRecent(){
+    if (!Recent) return;
+    const base = rowsForEraOnly();
+    const available = new Set(base.map(r=>getPrizeName(r)).filter(Boolean));
+    const list = recentPrizes.filter(n=>available.has(n)).slice(0, 12);
+    Recent.innerHTML = "";
+    if (!list.length){
+      Recent.innerHTML = `<span class="muted">まだありません</span>`;
+      return;
+    }
+    list.forEach(name=>{
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "chipbtn";
+      b.textContent = name;
+      b.setAttribute("aria-pressed", String(name===selectedPrize));
+      b.addEventListener("click", ()=>{
+        setSelectedPrize(name);
+      });
+      Recent.appendChild(b);
+    });
+  }
+
+  function openPicker(cell){
+    activeCell = cell;
+    if (PickerOverlay){
+      PickerOverlay.removeAttribute("hidden");
+      document.body.style.overflow = "hidden";
+    }
+    if (PSearch){
+      PSearch.value = "";
+      PSearch.focus();
+    }
+    setPickerRank("all");
+    renderPicker();
+  }
+  function closePicker(){
+    activeCell = null;
+    if (PickerOverlay){
+      PickerOverlay.setAttribute("hidden","");
+      document.body.style.overflow = "";
+    }
+  }
+
+  if (PickerClose) PickerClose.addEventListener("click", closePicker);
+  if (PickerOverlay) PickerOverlay.addEventListener("click", (ev)=>{
+    if (ev.target === PickerOverlay) closePicker();
+  });
+  if (OpenPicker) OpenPicker.addEventListener("click", ()=>{
+    openPicker(null);
+  });
+
+  if (ClearCellBtn) ClearCellBtn.addEventListener("click", ()=>{
+    if (!activeCell) return;
+    activeCell.classList.add("empty");
+    activeCell.dataset.v = "";
+    activeCell.innerHTML = `<div class="t">?</div>`;
+    closePicker();
+  });
+
+  if (PSearch) PSearch.addEventListener("input", renderPicker);
+
+  function renderPicker(){
+    if (!PList || !PRecent) return;
+    const base = rowsForEraOnly().filter(r=>matchesRank(getRankLabel(r), pickerRank));
+    const q = norm(PSearch ? PSearch.value : "").toLowerCase();
+    const list = Array.from(new Set(base.map(r=>getPrizeName(r)).filter(Boolean)))
+      .filter(n=>!q || n.toLowerCase().includes(q));
+    // recents
+    const available = new Set(list);
+    const rlist = recentPrizes.filter(n=>available.has(n)).slice(0, 12);
+    PRecent.innerHTML = "";
+    if (!rlist.length){
+      PRecent.innerHTML = `<span class="muted">—</span>`;
+    } else {
+      rlist.forEach(name=>{
+        const b = document.createElement("button");
+        b.type="button";
+        b.className="chipbtn";
+        b.textContent=name;
+        b.addEventListener("click", ()=>applyPrizeFromPicker(name));
+        PRecent.appendChild(b);
+      });
+    }
+
+    PList.innerHTML = "";
+    if (!list.length){
+      PList.innerHTML = `<span class="muted">該当なし</span>`;
+      return;
+    }
+    list.forEach(name=>{
+      const b = document.createElement("button");
+      b.type="button";
+      b.className="chipbtn";
+      b.textContent=name;
+      b.addEventListener("click", ()=>applyPrizeFromPicker(name));
+      PList.appendChild(b);
+    });
+  }
+
+  function applyPrizeFromPicker(name){
+    if (!name) return;
+    pushRecent(name);
+    setSelectedPrize(name);
+    if (activeCell){
+      activeCell.classList.remove("empty");
+      activeCell.dataset.v = name;
+      activeCell.innerHTML = `<div class="t">${escapeHTML(name)}</div>`;
+    }
+    closePicker();
+    renderRecent();
   }
 
   function boardDims(){
@@ -316,15 +593,21 @@
         b.dataset.c = String(c);
         b.innerHTML = `<div class="t">?</div>`;
         b.addEventListener("click", ()=>{
-          if (eraseMode || !selectedPrize){
+          if (eraseMode){
             b.classList.add("empty");
             b.dataset.v = "";
             b.innerHTML = `<div class="t">?</div>`;
             return;
           }
+          if (!selectedPrize){
+            openPicker(b);
+            return;
+          }
           b.classList.remove("empty");
           b.dataset.v = selectedPrize;
           b.innerHTML = `<div class="t">${escapeHTML(selectedPrize)}</div>`;
+          pushRecent(selectedPrize);
+          renderRecent();
         });
         // right click: clear
         b.addEventListener("contextmenu", (ev)=>{
@@ -352,11 +635,7 @@
       b.textContent = name;
       b.setAttribute("aria-pressed", String(name===selectedPrize));
       b.addEventListener("click", ()=>{
-        selectedPrize = name;
-        // update pressed state
-        Array.from(Palette.querySelectorAll("button")).forEach(x=>{
-          x.setAttribute("aria-pressed", String(x.textContent===selectedPrize));
-        });
+        setSelectedPrize(name);
       });
       Palette.appendChild(b);
     });
@@ -370,19 +649,24 @@
     });
   }
 
+  function renderChecker(){
+    const base = rowsForEraOnly();
+    renderRecent();
+    renderPalette(base);
+  }
+
   function render(){
     const filtered = filterRows();
     renderPrizeTable(filtered);
-    renderPalette(filtered);
+    renderChecker();
   }
 
   Q.addEventListener("input", render);
-  PQ.addEventListener("input", render);
 
   Size.addEventListener("change", ()=>{ buildBoard(); });
   ClearBtn.addEventListener("click", clearBoard);
 
-  load().then(()=>{ buildBoard(); });
+  load().then(()=>{ buildBoard(); setSelectedPrize(""); renderRecent(); });
 </script>
 </body>
 </html>
