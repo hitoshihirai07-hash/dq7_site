@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="./assets/style.css" />
+  <title>ラッキーパネル</title>
+
+  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./assets/icon-192.png" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <meta name="theme-color" content="#e8892f" />
+  <meta name="description" content="ラッキーパネルの景品一覧と盤面チェック用ツール。" />
+  <style>
+    .lp-grid{display:grid; grid-template-columns: 1.1fr .9fr; gap:14px}
+    @media (max-width: 980px){ .lp-grid{grid-template-columns: 1fr} }
+
+    .lp-note{margin:0; padding-left:18px}
+    .lp-note li{margin:4px 0}
+
+    .lp-toolbar{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+    .lp-toolbar .input{flex:1 1 240px}
+    .seg{display:inline-flex; gap:6px; padding:4px; background:var(--chip); border:1px solid var(--line); border-radius:999px}
+    .seg button{
+      border:0; background:transparent; padding:8px 10px; border-radius:999px;
+      cursor:pointer; font-weight:700; color:var(--text)
+    }
+    .seg button[aria-pressed="true"]{ background:#fff; box-shadow:0 2px 10px rgba(0,0,0,.08); color:var(--accent) }
+
+    .palette{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; max-height:240px; overflow:auto; padding:2px}
+    .chipbtn{
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:999px;
+      padding:8px 10px;
+      cursor:pointer;
+      font-weight:700;
+      font-size:13px;
+      box-shadow:0 2px 10px rgba(0,0,0,.05);
+      white-space:nowrap;
+    }
+    .chipbtn[aria-pressed="true"]{ outline:2px solid rgba(232,137,47,.35); border-color: rgba(232,137,47,.65); }
+
+    .board-wrap{display:flex; flex-direction:column; gap:10px}
+    .board{
+      display:grid;
+      gap:8px;
+      background:rgba(255,255,255,.6);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:10px;
+    }
+    .cell{
+      aspect-ratio: 1 / 1;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding:6px;
+      cursor:pointer;
+      box-shadow:0 2px 10px rgba(0,0,0,.05);
+      user-select:none;
+    }
+    .cell .t{font-size:12px; font-weight:800; line-height:1.15}
+    .cell.empty{background:linear-gradient(180deg, #fff, #fff7ec)}
+    .cell.empty .t{color:var(--muted); font-weight:700}
+    .hint{color:var(--muted); font-size:12px}
+    .mono{font-family:var(--mono)}
+  </style>
+</head>
+<body>
+<main>
+  <div class="card">
+    <h1>ラッキーパネル</h1>
+    <p>景品一覧の確認と、盤面をメモするための簡単なチェックツールです（保存はしません。ページを更新するとリセットされます）。</p>
+
+    <h2 style="margin-top:14px">条件メモ</h2>
+    <ul class="lp-note">
+      <li><b>場所</b>：ダーマ周辺の旅の宿（過去／現代）</li>
+      <li><b>回数</b>：1日3回（宿屋で寝ると回数リセット）</li>
+      <li><b>盤面</b>：最初は 4×4 →（<b>風の精霊解放</b>で解放）4×5 →（最後の解放）5×5</li>
+    </ul>
+    <div class="hint" style="margin-top:6px">※回数リセットは攻略サイト側にも記載があるため、挙動の確認に便利です。</div>
+
+    <hr/>
+
+    <section class="lp-grid">
+      <section>
+        <h2>景品一覧</h2>
+        <div class="lp-toolbar">
+          <div class="seg" role="group" aria-label="時代">
+            <button id="eraAll" type="button" aria-pressed="true">両方</button>
+            <button id="eraPast" type="button" aria-pressed="false">過去</button>
+            <button id="eraNow" type="button" aria-pressed="false">現代</button>
+          </div>
+          <input id="q" class="input" placeholder="検索（景品 / ランク）" />
+        </div>
+        <div class="hint" style="margin-top:8px">※この表は、管理している景品CSVから表示しています。</div>
+        <div id="prizeTable" style="margin-top:10px"></div>
+      </section>
+
+      <section class="board-wrap">
+        <h2>盤面チェックツール</h2>
+
+        <div class="lp-toolbar">
+          <label class="hint">盤面</label>
+          <select id="size">
+            <option value="4x4">4×4</option>
+            <option value="4x5">4×5</option>
+            <option value="5x5">5×5</option>
+          </select>
+
+          <button id="clear" class="btn" type="button">クリア</button>
+          <button id="erase" class="btn" type="button" aria-pressed="false">消去：OFF</button>
+        </div>
+
+        <div class="hint">1) 景品を選ぶ → 2) マスを押して配置（消去ONなら消せます）</div>
+        <input id="pq" class="input" placeholder="景品を絞り込み（盤面用）" />
+
+        <div id="palette" class="palette"></div>
+
+        <div id="board" class="board" aria-label="盤面"></div>
+
+        <div class="hint">※コツ：ゲーム側で最初に見える分を先に埋めておくと、途中で迷いにくいです。</div>
+      </section>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-note">
+      <div class="footer-links">
+        <a href="./about.html">このサイトについて</a>
+        <a href="./privacy.html">プライバシーポリシー</a>
+        <a href="./contact.html">お問い合わせ</a>
+      </div>
+      <div class="small" style="margin-top:6px;">※非公式ファンサイトです。掲載情報は参考用です。</div>
+    </div>
+    <div class="footer-copy small">© 2026 DQ7R データベース</div>
+  </div>
+</footer>
+
+<script type="module">
+  import { boot } from "./assets/app_common.js";
+  import { loadCSV } from "./assets/data.js";
+  import { qs, escapeHTML, makeTable } from "./assets/util.js";
+
+  boot("ラッキーパネル | DQ7R");
+
+  const PrizeTable = qs("#prizeTable");
+  const Q = qs("#q");
+  const PQ = qs("#pq");
+
+  const btnAll = qs("#eraAll");
+  const btnPast = qs("#eraPast");
+  const btnNow  = qs("#eraNow");
+
+  const Size = qs("#size");
+  const Board = qs("#board");
+  const Palette = qs("#palette");
+
+  const ClearBtn = qs("#clear");
+  const EraseBtn = qs("#erase");
+
+  let eraseMode = false;
+  let era = "all"; // all | past | now
+  let rows = [];
+  let selectedPrize = "";
+
+  function setEra(next){
+    era = next;
+    btnAll.setAttribute("aria-pressed", String(next==="all"));
+    btnPast.setAttribute("aria-pressed", String(next==="past"));
+    btnNow.setAttribute("aria-pressed", String(next==="now"));
+    render();
+  }
+
+  btnAll.addEventListener("click", ()=>setEra("all"));
+  btnPast.addEventListener("click", ()=>setEra("past"));
+  btnNow.addEventListener("click", ()=>setEra("now"));
+
+  EraseBtn.addEventListener("click", ()=>{
+    eraseMode = !eraseMode;
+    EraseBtn.setAttribute("aria-pressed", String(eraseMode));
+    EraseBtn.textContent = "消去：" + (eraseMode ? "ON" : "OFF");
+  });
+
+  function norm(s){ return (s||"").toString().trim(); }
+  function yn(v){
+    const t = norm(v);
+    return t === "◯" || t === "○" || t.toLowerCase() === "yes" || t === "1" || t.toLowerCase() === "true";
+  }
+
+  async function load(){
+    // Prefer renamed file without spaces; fallback to the original name if it exists.
+    try {
+      rows = await loadCSV("./lucky_panel_prize.csv");
+    } catch (e1) {
+      try {
+        rows = await loadCSV("./lucky%20panel_prize.csv");
+      } catch (e2) {
+        PrizeTable.innerHTML = `<div class="muted">景品CSVが見つかりません。</div>`;
+        rows = [];
+      }
+    }
+    render();
+  }
+
+  function filterRows(){
+    const q = norm(Q.value).toLowerCase();
+    return rows.filter(r=>{
+      const prize = norm(r["景品"] || r["prize"] || r["name"]).toLowerCase();
+      const rank  = norm(r["ランク"] || r["rank"]).toLowerCase();
+      const pastOk = yn(r["ダーマ旅の宿過去"] ?? r["past"]);
+      const nowOk  = yn(r["ダーマ旅の宿現代"] ?? r["now"]);
+      if (era === "past" && !pastOk) return false;
+      if (era === "now"  && !nowOk) return false;
+      if (!q) return true;
+      return prize.includes(q) || rank.includes(q);
+    });
+  }
+
+  function prizesForPalette(filteredRows){
+    const q = norm(PQ.value).toLowerCase();
+    const list = filteredRows
+      .filter(r=>{
+        const prize = norm(r["景品"] || r["prize"] || r["name"]).toLowerCase();
+        return !q || prize.includes(q);
+      })
+      .map(r=>norm(r["景品"] || r["prize"] || r["name"]))
+      .filter(Boolean);
+
+    // unique
+    return Array.from(new Set(list));
+  }
+
+  function renderPrizeTable(filtered){
+    const cols = [
+      { key:"景品", label:"景品", render:(r)=>escapeHTML(norm(r["景品"] || r["prize"] || r["name"])) },
+      { key:"過去", label:"過去", render:(r)=> yn(r["ダーマ旅の宿過去"] ?? r["past"]) ? "◯" : "—" },
+      { key:"現代", label:"現代", render:(r)=> yn(r["ダーマ旅の宿現代"] ?? r["now"]) ? "◯" : "—" },
+      { key:"ランク", label:"ランク", render:(r)=> escapeHTML(norm(r["ランク"] || r["rank"])) },
+    ];
+    PrizeTable.innerHTML = makeTable(filtered, cols);
+  }
+
+  function boardDims(){
+    const v = Size.value;
+    if (v === "4x5") return [4,5];
+    if (v === "5x5") return [5,5];
+    return [4,4];
+  }
+
+  function buildBoard(){
+    const [h,w] = boardDims();
+    Board.style.gridTemplateColumns = `repeat(${w}, 1fr)`;
+    Board.innerHTML = "";
+    for (let r=0; r<h; r++){
+      for (let c=0; c<w; c++){
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "cell empty";
+        b.dataset.r = String(r);
+        b.dataset.c = String(c);
+        b.innerHTML = `<div class="t">?</div>`;
+        b.addEventListener("click", ()=>{
+          if (eraseMode || !selectedPrize){
+            b.classList.add("empty");
+            b.dataset.v = "";
+            b.innerHTML = `<div class="t">?</div>`;
+            return;
+          }
+          b.classList.remove("empty");
+          b.dataset.v = selectedPrize;
+          b.innerHTML = `<div class="t">${escapeHTML(selectedPrize)}</div>`;
+        });
+        // right click: clear
+        b.addEventListener("contextmenu", (ev)=>{
+          ev.preventDefault();
+          b.classList.add("empty");
+          b.dataset.v = "";
+          b.innerHTML = `<div class="t">?</div>`;
+        });
+        Board.appendChild(b);
+      }
+    }
+  }
+
+  function renderPalette(filtered){
+    const list = prizesForPalette(filtered);
+    if (!list.length){
+      Palette.innerHTML = `<span class="muted">該当なし</span>`;
+      return;
+    }
+    Palette.innerHTML = "";
+    list.forEach(name=>{
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "chipbtn";
+      b.textContent = name;
+      b.setAttribute("aria-pressed", String(name===selectedPrize));
+      b.addEventListener("click", ()=>{
+        selectedPrize = name;
+        // update pressed state
+        Array.from(Palette.querySelectorAll("button")).forEach(x=>{
+          x.setAttribute("aria-pressed", String(x.textContent===selectedPrize));
+        });
+      });
+      Palette.appendChild(b);
+    });
+  }
+
+  function clearBoard(){
+    Array.from(Board.querySelectorAll(".cell")).forEach(b=>{
+      b.classList.add("empty");
+      b.dataset.v = "";
+      b.innerHTML = `<div class="t">?</div>`;
+    });
+  }
+
+  function render(){
+    const filtered = filterRows();
+    renderPrizeTable(filtered);
+    renderPalette(filtered);
+  }
+
+  Q.addEventListener("input", render);
+  PQ.addEventListener("input", render);
+
+  Size.addEventListener("change", ()=>{ buildBoard(); });
+  ClearBtn.addEventListener("click", clearBoard);
+
+  load().then(()=>{ buildBoard(); });
+</script>
+</body>
+</html>
