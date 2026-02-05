@@ -10,7 +10,14 @@
   <link rel="apple-touch-icon" href="./assets/icon-192.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <meta name="theme-color" content="#e8892f" />  <meta name="description" content="DQ7R のちいさなメダル関連メモ一覧。検索・絞り込み対応。" />
+<style>
+    .tabs{display:flex; gap:8px; flex-wrap:wrap; margin:12px 0;}
+    .tab{border:1px solid var(--line); background:var(--card); padding:8px 10px; border-radius:999px; cursor:pointer; font-size:14px;}
+    .tab.active{background:var(--accent); color:#fff; border-color:var(--accent);}
+    .tab-panel.hidden{display:none;}
+  </style>
 </head>
+
 <body>
 <main>
   <section class="card">
@@ -18,6 +25,12 @@
 
     <p>ちいさなメダル関連のメモを一覧表示します。検索で絞り込みできます。</p>
 
+<div class="tabs" role="tablist" aria-label="ちいさなメダル">
+  <button class="tab active" type="button" data-tab="collect">回収チェック</button>
+  <button class="tab" type="button" data-tab="prizes">景品一覧</button>
+</div>
+
+<div id="tab-collect" class="tab-panel">
     <div class="toolbar">
       <input id="q" class="input" placeholder="検索（場所 / 入手方法 / メモ）" />
       <select id="area" class="select">
@@ -43,8 +56,15 @@
       <progress id="bar" value="0" max="100"></progress>
     </div>
 
-    <div id="out"></div>
-  </section>
+
+  <div id="out"></div>
+  </div>
+
+  <div id="tab-prizes" class="tab-panel hidden">
+    <p class="small" style="margin:6px 0 10px;">ちいさなメダルの景品一覧です。</p>
+    <div id="prizeOut"></div>
+  </div>
+</section>
 </main>
 
 <footer>
@@ -77,6 +97,11 @@
   const ONLY = qs("#onlyUnchecked");
   const RESET = qs("#reset");
   const OUT = qs("#out");
+
+const PRIZE_OUT = qs("#prizeOut");
+const TAB_BTNS = Array.from(document.querySelectorAll(".tab[data-tab]"));
+const TAB_COLLECT = qs("#tab-collect");
+const TAB_PRIZES = qs("#tab-prizes");
 
   const PARAMS = new URLSearchParams(location.search);
   const QP_RAW = PARAMS.get("q") || "";
@@ -152,8 +177,30 @@
     return `<div class="table-wrap"><table>${thead}${tbody}</table></div>`;
   }
 
+function renderPrizeTable(rows){
+  const sorted = rows.slice().sort((a,b)=> (Number(a.need)||0) - (Number(b.need)||0));
+  const thead = `<thead><tr><th>景品</th><th style="width:110px;">必要枚数</th></tr></thead>`;
+  const tbody = `<tbody>${
+    sorted.map(r=>`
+      <tr>
+        <td>${escapeHTML(r.prize ?? "")}</td>
+        <td style="text-align:right;">${escapeHTML(String(r.need ?? ""))}</td>
+      </tr>
+    `).join("")
+  }</tbody>`;
+  return `<div class="table-wrap"><table>${thead}${tbody}</table></div>`;
+}
+
+function setTab(tab){
+  const isPrizes = tab === "prizes";
+  TAB_COLLECT.classList.toggle("hidden", isPrizes);
+  TAB_PRIZES.classList.toggle("hidden", !isPrizes);
+  TAB_BTNS.forEach(b=>b.classList.toggle("active", b.dataset.tab === tab));
+}
+
   async function main(){
     const medals = await loadCSV("./data/current/medals.csv");
+    const prizes = await loadCSV("./data/current/medal_prizes.csv");
 
     const areas = Array.from(new Set(medals.map(r=>(r.area||"").trim()).filter(Boolean)))
       .sort((a,b)=>a.localeCompare(b,"ja"));
@@ -212,10 +259,32 @@
     ERA.addEventListener("change", render);
     ONLY.addEventListener("change", render);
 
-    render();
-  }
 
-  main().catch(err=>{
+  // 景品一覧（初期表示）
+  function renderPrizes(){
+    if (!prizes || prizes.length === 0){
+      PRIZE_OUT.innerHTML = `<div class="warn">景品データがありません（data/current/medal_prizes.csv を確認してください）。</div>`;
+      return;
+    }
+    PRIZE_OUT.innerHTML = renderPrizeTable(prizes) + `<div class="small" style="margin-top:10px;">件数: ${prizes.length}</div>`;
+  }
+  renderPrizes();
+
+  // Tab UI
+  TAB_BTNS.forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      setTab(btn.dataset.tab || "collect");
+    });
+  });
+
+  const TABP = (PARAMS.get("tab") || "").toLowerCase();
+  if (TABP === "prizes") setTab("prizes");
+  else setTab("collect");
+
+  render();
+}
+
+main().catch(err=>{
     OUT.innerHTML = `<div class="warn">${escapeHTML(err.message || String(err))}</div>`;
   });
 
