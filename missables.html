@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="./assets/style.css" />
+  <title>取り逃し厳禁まとめ（Q&A）</title>
+
+  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./assets/icon-192.png" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <meta name="theme-color" content="#e8892f" />
+  <meta name="description" content="DQ7R の取り逃し厳禁（取り返しがつかない要素）をQ&A形式でまとめます。" />
+</head>
+<body>
+<main>
+  <section class="card">
+    <h1>取り逃し厳禁まとめ（Q&A）</h1>
+    <p>「損をしたくない」人が最初に見るやつ。結論だけを短くまとめます。</p>
+
+    <div class="toolbar" style="margin-top:12px;">
+      <input id="q" class="input" placeholder="検索（例：名前 / 変更 / 期間限定）" />
+      <span class="chip">最終更新: <b id="updated">-</b></span>
+    </div>
+
+    <div id="out" class="qa-list" style="margin-top:12px;"></div>
+  </section>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-note">
+      <div class="footer-links">
+        <a href="./about.html">このサイトについて</a>
+        <a href="./privacy.html">プライバシーポリシー</a>
+        <a href="./contact.html">お問い合わせ</a>
+      </div>
+      <div class="small" style="margin-top:6px;">※非公式ファンサイトです。掲載情報は参考用です。</div>
+    </div>
+    <div class="footer-copy small">© 2026 DQ7R データベース</div>
+  </div>
+</footer>
+
+<script type="module">
+  import { boot } from "./assets/app_common.js";
+  import { loadCSV } from "./assets/data.js";
+  import { qs, escapeHTML } from "./assets/util.js";
+
+  boot("取り逃し厳禁まとめ（Q&A） | DQ7R");
+
+  const Q = qs("#q");
+  const OUT = qs("#out");
+  const UPDATED = qs("#updated");
+
+  const PARAMS = new URLSearchParams(location.search);
+  const QP_RAW = (PARAMS.get("q") || "").toString();
+  const QP = QP_RAW.replace(/【[^】]*】/g," ").replace(/#[0-9]+/g," ").replace(/\s+/g," ").trim();
+  if (QP) Q.value = QP;
+
+  function norm(s){
+    return (s || "").toString().normalize("NFKC").toLowerCase().trim();
+  }
+
+  function nl2br(s){
+    return escapeHTML((s || "").toString()).replace(/\n/g, "<br>");
+  }
+
+  function pickLatest(rows){
+    const ds = rows.map(r => (r.last_verified || "").toString().trim()).filter(Boolean);
+    if (!ds.length) return "-";
+    // YYYY/MM/DD or YYYY-MM-DD: lexicographic sort works
+    ds.sort();
+    return ds[ds.length - 1];
+  }
+
+  function toNum(v){
+    const n = Number((v || "").toString().trim());
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function render(rows){
+    const q = norm(Q.value);
+    const filtered = rows.filter(r=>{
+      if (!q) return true;
+      const blob = [r.question, r.answer, r.keywords, r.notes].join(" ");
+      return norm(blob).includes(q);
+    });
+
+    if (!filtered.length){
+      OUT.innerHTML = `<div class="gsearch-empty">該当なし</div>`;
+      return;
+    }
+
+    OUT.innerHTML = filtered.map(r=>{
+      const qtxt = (r.question || "").toString().trim();
+      const atxt = (r.answer || "").toString();
+      const notes = (r.notes || "").toString().trim();
+      const kws = (r.keywords || "").toString().trim();
+      const meta = [
+        kws ? `<span class="chip">${escapeHTML(kws)}</span>` : "",
+        notes ? `<span class="small">${escapeHTML(notes)}</span>` : "",
+      ].filter(Boolean).join(" ");
+
+      return `
+        <details class="qa-item" open>
+          <summary><span class="qa-q">Q. ${escapeHTML(qtxt)}</span></summary>
+          <div class="qa-a">${nl2br(atxt)}</div>
+          ${meta ? `<div class="qa-meta">${meta}</div>` : ""}
+        </details>
+      `;
+    }).join("");
+  }
+
+  async function main(){
+    const rows = await loadCSV("./data/current/missables_qa.csv");
+
+    const data = rows
+      .filter(r => (r.question || "").toString().trim())
+      .map(r => ({...r, _sort: toNum(r.sort)}));
+
+    data.sort((a,b)=>{
+      const as = (a._sort ?? 1e9);
+      const bs = (b._sort ?? 1e9);
+      if (as !== bs) return as - bs;
+      return (a.qa_id || "").localeCompare((b.qa_id || ""), "en");
+    });
+
+    UPDATED.textContent = pickLatest(data);
+
+    Q.addEventListener("input", ()=>render(data));
+    render(data);
+  }
+
+  main().catch(err=>{
+    OUT.innerHTML = `<div class="warn">${escapeHTML(err.message || String(err))}</div>`;
+  });
+</script>
+</body>
+</html>
