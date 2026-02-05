@@ -30,7 +30,6 @@ function groupOrder(label){
     "呪文/特技": 7,
     "メダル": 8,
     "石板": 9,
-    "ストーリー": 10,
     "その他": 99,
   };
   return order[label] || 99;
@@ -67,17 +66,19 @@ function buildDisplay(sourceKey, obj, nameCol){
     const core = [loc].filter(Boolean).join(" ");
     return [era ? `【${era}】` : "", head, core].filter(Boolean).join(" ");
   }
-    if (sourceKey === "tablets"){
+  if (sourceKey === "medals"){
     const era = (obj.era || "").toString().trim();
     const area = (obj.area || "").toString().trim();
     const loc = (obj.location || "").toString().trim();
     return [era ? `【${era}】` : "", area, loc].filter(Boolean).join(" ");
+  if (sourceKey === "tablets"){
+    const era = (obj.era || "").toString().trim();
+    const area = (obj.area || "").toString().trim();
+    const loc = (obj.location || "").toString().trim();
+    const piece = (obj.piece || "").toString().trim();
+    const tail = piece ? `（${piece}）` : "";
+    return [era ? `【${era}】` : "", area, loc + tail].filter(Boolean).join(" ");
   }
-if (sourceKey === "medals"){
-    const era = (obj.era || "").toString().trim();
-    const area = (obj.area || "").toString().trim();
-    const loc = (obj.location || "").toString().trim();
-    return [era ? `【${era}】` : "", area, loc].filter(Boolean).join(" ");
   }
   const name = (obj[nameCol] ?? "").toString().trim();
   return name;
@@ -104,14 +105,13 @@ function buildListQuery(sourceKey, obj, display){
     const loc = (obj.location || "").toString().trim();
     const area = (obj.area || "").toString().trim();
     return ([loc, area].filter(Boolean).join(" ").trim()) || stripDecor(display);
-  }
   if (sourceKey === "tablets"){
     const loc = (obj.location || "").toString().trim();
     const area = (obj.area || "").toString().trim();
     const piece = (obj.piece || "").toString().trim();
     return ([loc, area, piece].filter(Boolean).join(" ").trim()) || stripDecor(display);
   }
-
+  }
   return stripDecor(display);
 }
 
@@ -120,10 +120,9 @@ function buildURL(source, obj, display){
   const detail = (source.detail_page || "").trim();
   const list = (source.list_page || "").trim();
 
-  // tools: direct url from row
-  if (source.source_key === "tools"){
-    const u = (obj.url || "").toString().trim();
-    return u || "";
+  if ((source.source_key || "") === "tools"){
+    const url = (obj.url || "").toString().trim();
+    return url || "";
   }
 
   if (idCol && detail){

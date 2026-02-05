@@ -9,17 +9,17 @@
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./assets/icon-192.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <meta name="theme-color" content="#e8892f" />  <meta name="description" content="DQ7R の石板メモ一覧。検索・絞り込み・チェック対応。" />
+  <meta name="theme-color" content="#e8892f" />  <meta name="description" content="DQ7R の石板メモ（チェックリスト）。検索・絞り込み対応。" />
 </head>
 <body>
 <main>
   <section class="card">
     <h1>石板</h1>
 
-    <p>石板のメモを一覧表示します。検索・絞り込み・チェックに対応しています。</p>
+    <p>石板のメモを一覧表示します。チェックして進捗管理できます（保存はこの端末のローカルのみ）。</p>
 
     <div class="toolbar">
-      <input id="q" class="input" placeholder="検索（場所 / ピース / 入手 / メモ）" />
+      <input id="q" class="input" placeholder="検索（場所 / かけら / 入手方法 / メモ）" />
       <select id="area" class="select">
         <option value="all">エリア: 全て</option>
       </select>
@@ -121,7 +121,8 @@
         <th style="width:72px;">時代</th>
         <th>エリア</th>
         <th>場所</th>
-        <th>ピース</th>
+        <th style="width:140px;">かけら/石板</th>
+        <th style="width:90px;">色</th>
         <th>入手</th>
         <th>メモ</th>
       </tr></thead>
@@ -136,7 +137,7 @@
           <tr>
             <td>
               <label style="display:flex; gap:8px; align-items:center; cursor:pointer;">
-                <input type="checkbox" class="tablet-cb" data-id="${escapeHTML(id)}" ${checked ? "checked" : ""}>
+                <input type="checkbox" class="medal-cb" data-id="${escapeHTML(id)}" ${checked ? "checked" : ""}>
                 ${badge}
               </label>
             </td>
@@ -144,6 +145,7 @@
             <td>${escapeHTML(r.area ?? "")}</td>
             <td>${escapeHTML(r.location ?? "")}</td>
             <td>${escapeHTML(r.piece ?? "")}</td>
+            <td>${escapeHTML(r.color ?? "")}</td>
             <td>${escapeHTML(r.how ?? "")}</td>
             <td>${escapeHTML(r.notes ?? "")}</td>
           </tr>
@@ -182,7 +184,7 @@
         if (era !== "all" && (r.era||"").trim() !== era) return false;
         if (only && state[id]) return false;
         if (!q) return true;
-        const blob = [r.tablet_id,r.era,r.area,r.location,r.piece,r.how,r.notes].join(" ").toLowerCase();
+        const blob = [r.medal_id,r.era,r.area,r.location,r.how,r.notes].join(" ").toLowerCase();
         return blob.includes(q);
       });
 
@@ -193,7 +195,7 @@
       OUT.innerHTML = renderTable(filtered, state) +
         `<div class="small" style="margin-top:10px;">表示件数: ${filtered.length}</div>`;
 
-      OUT.querySelectorAll(".tablet-cb").forEach(cb=>{
+      OUT.querySelectorAll(".medal-cb").forEach(cb=>{
         cb.addEventListener("change", (e)=>{
           const id = e.target.getAttribute("data-id");
           state[id] = e.target.checked;
