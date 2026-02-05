@@ -78,9 +78,25 @@
           <select id="skillSel" class="select"></select>
         </div>
 
+        <div class="field" style="min-width:140px;">
+          <label class="small">技表示</label>
+          <select id="skillFilter" class="select">
+            <option value="mul">倍率あり</option>
+            <option value="all">すべて</option>
+          </select>
+        </div>
+
         <div class="field" style="min-width:220px;">
           <label class="small">武器（任意）</label>
           <select id="weaponSel" class="select"></select>
+        </div>
+
+        <div class="field" style="min-width:140px;">
+          <label class="small">武器表示</label>
+          <select id="weaponFilter" class="select">
+            <option value="mul">倍率あり</option>
+            <option value="all">すべて</option>
+          </select>
         </div>
 
         <div class="field" style="min-width:130px;">
@@ -144,7 +160,9 @@
     def: document.getElementById("def"),
     defStage: document.getElementById("defStage"),
     skillSel: document.getElementById("skillSel"),
+    skillFilter: document.getElementById("skillFilter"),
     weaponSel: document.getElementById("weaponSel"),
+    weaponFilter: document.getElementById("weaponFilter"),
     mult: document.getElementById("mult"),
     hp: document.getElementById("hp"),
     out: document.getElementById("out"),
@@ -183,6 +201,103 @@
   function hasMul(row){
     const n = toNum(row?.damage_mul, NaN);
     return Number.isFinite(n) && n > 0;
+  }
+
+  function labelSkill(s){
+    const name = (s.name || s.skill_id || "").toString().trim();
+    const type = (s.type || "").toString().trim();
+    const el = (s.element || "").toString().trim();
+    const mul = toNum(s.damage_mul, NaN);
+    const mulTxt = (Number.isFinite(mul) && mul > 0) ? `倍率${mul}` : "倍率未設定";
+    const parts = [];
+    if (type) parts.push(type);
+    if (el && el !== "無") parts.push(el);
+    parts.push(mulTxt);
+    return parts.length ? `${name}（${parts.join(" / ")}）` : name;
+  }
+
+  function renderSkillOptions(){
+    if (!EL.skillSel) return;
+    const keep = (EL.skillSel.value || "").toString().trim();
+    const mode = (EL.skillFilter?.value || "mul").toString();
+    EL.skillSel.innerHTML = "";
+    EL.skillSel.append(opt("", "（技未選択）"));
+
+    const rows = skills
+      .filter(s=>{
+        const id = (s.skill_id||"").toString().trim();
+        if (!id) return false;
+        return (mode === "mul") ? hasMul(s) : true;
+      })
+      .slice()
+      .sort((a,b)=> (a.name||"").localeCompare((b.name||""), "ja"));
+
+    for (const s of rows){
+      const label = labelSkill(s);
+      if (!label) continue;
+      EL.skillSel.append(opt((s.skill_id||"").toString().trim(), label));
+    }
+
+    if (keep && Array.from(EL.skillSel.options).some(o=>o.value === keep)) EL.skillSel.value = keep;
+    else EL.skillSel.value = "";
+  }
+
+  function renderWeaponOptions(){
+    if (!EL.weaponSel) return;
+    const keep = (EL.weaponSel.value || "").toString().trim();
+    const mode = (EL.weaponFilter?.value || "mul").toString();
+    EL.weaponSel.innerHTML = "";
+    EL.weaponSel.append(opt("", "（武器未選択）"));
+
+    const rows = items
+      .filter(it => (it.category || "").toString().trim() === "武器")
+      .filter(it=>{
+        const id = (it.item_id||"").toString().trim();
+        if (!id) return false;
+        return (mode === "mul") ? hasMul(it) : true;
+      })
+      .slice()
+      .sort((a,b)=> (a.name||"").localeCompare((b.name||""), "ja"));
+
+    for (const it of rows){
+      const label = labelWeapon(it);
+      if (!label) continue;
+      const mul = toNum(it.damage_mul, NaN);
+      const suffix = (Number.isFinite(mul) && mul > 0) ? `（倍率${mul}）` : `（倍率未設定）`;
+      EL.weaponSel.append(opt((it.item_id||"").toString().trim(), label + suffix));
+    }
+
+    if (keep && Array.from(EL.weaponSel.options).some(o=>o.value === keep)) EL.weaponSel.value = keep;
+    else EL.weaponSel.value = "";
+  }
+
+  function mapElementToResistTypeId(skillElement){
+    const se = (skillElement || "").toString().trim();
+    if (!se || se === "無") return "";
+    // allow exact resist_type_id
+    if (resistTypes.find(r => (r.resist_type_id || "").toString().trim() === se)) return se;
+
+    const rt =
+      resistTypes.find(r => (r.short || "").toString().trim() === se) ||
+      resistTypes.find(r => (r.name || "").toString().includes(se)) ||
+      resistTypes.find(r => se.includes((r.short || "").toString().trim()));
+
+    return rt ? (rt.resist_type_id || "").toString().trim() : "";
+  }
+
+  function updateElementFromSkill(){
+    const sid = (EL.skillSel?.value || "").toString().trim();
+    if (!sid) return;
+    const s = skills.find(x => (x.skill_id || "").toString().trim() === sid);
+    if (!s) return;
+    const rt = mapElementToResistTypeId(s.element);
+    if (!rt) return;
+
+    // elementが未選択の時だけ自動セット（手動を尊重）
+    if (!EL.element.value){
+      EL.element.value = rt;
+      applyResistFromBoss();
+    }
   }
 
   function updateMultFromSelections(){
@@ -382,35 +497,13 @@
         EL.element.append(opt(r.resist_type_id, `${r.short || r.name}`));
       });
 
+    // 技 dropdown（任意）
+    if (EL.skillFilter) EL.skillFilter.value = (EL.skillFilter.value || "mul");
+    renderSkillOptions();
 
-    // 技（倍率） dropdown（任意）
-    if (EL.skillSel){
-      EL.skillSel.append(opt("", "（技未選択）"));
-      skills
-        .filter(hasMul)
-        .slice()
-        .sort((a,b)=> (a.name||"").localeCompare((b.name||""), "ja"))
-        .forEach(s=>{
-          const name = (s.name || s.skill_id || "").toString().trim();
-          if (!name) return;
-          EL.skillSel.append(opt(s.skill_id, name));
-        });
-    }
-
-    // 武器（倍率） dropdown（任意）
-    if (EL.weaponSel){
-      EL.weaponSel.append(opt("", "（武器未選択）"));
-      items
-        .filter(it => (it.category || "").toString().trim() === "武器")
-        .filter(hasMul)
-        .slice()
-        .sort((a,b)=> (a.name||"").localeCompare((b.name||""), "ja"))
-        .forEach(it=>{
-          const name = labelWeapon(it);
-          if (!name) return;
-          EL.weaponSel.append(opt(it.item_id, name));
-        });
-    }
+    // 武器 dropdown（任意）
+    if (EL.weaponFilter) EL.weaponFilter.value = (EL.weaponFilter.value || "mul");
+    renderWeaponOptions();
 
     // URL params: damage.html?boss=boss_001&element=fire
     const params = new URLSearchParams(location.search);
@@ -436,8 +529,10 @@
 
     EL.boss.addEventListener("change", ()=>{ setBossInfo(); applyBossDefaults(); applyResistFromBoss(); });
     EL.element.addEventListener("change", ()=>{ applyResistFromBoss(); });
-    if (EL.skillSel) EL.skillSel.addEventListener("change", updateMultFromSelections);
+    if (EL.skillSel) EL.skillSel.addEventListener("change", ()=>{ updateElementFromSkill(); updateMultFromSelections(); });
     if (EL.weaponSel) EL.weaponSel.addEventListener("change", updateMultFromSelections);
+    if (EL.skillFilter) EL.skillFilter.addEventListener("change", ()=>{ renderSkillOptions(); updateElementFromSkill(); updateMultFromSelections(); });
+    if (EL.weaponFilter) EL.weaponFilter.addEventListener("change", ()=>{ renderWeaponOptions(); updateMultFromSelections(); });
 
     EL.calc.addEventListener("click", compute);
     EL.reset.addEventListener("click", resetAll);

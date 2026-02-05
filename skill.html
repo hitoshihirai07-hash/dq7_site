@@ -92,8 +92,26 @@
     const related = cand.slice(0,3);
     const relatedHtml = related.length ? related.map(x=>`<a class="chip" href="./skill.html?id=${encodeURIComponent((x.skill_id||'').toString().trim())}">${escapeHTML(x.name||x.skill_id||'')}<\/a>`).join(' ') : NA;
 
+    
+    const skillName = (s.name||"").toString().trim();
+
+    function hasSkillName_(rowName, targetName){
+      const raw = (rowName||"").toString();
+      const t = (targetName||"").toString().trim();
+      if (!raw || !t) return false;
+      const trimmed = raw.trim();
+      if (trimmed === t) return true;
+      // allow "A、B" / "A,B" / "A・B" style cells
+      const parts = trimmed.split(/[、,\/・]/).map(x=>x.trim()).filter(Boolean);
+      return parts.includes(t);
+    }
+
     const learnedByJobs = jobSkills
-      .filter(r=>(r.skill_id||"")===id)
+      .filter(r=>{
+        const sid = (r.skill_id||"").toString().trim();
+        if (sid && sid === id) return true;
+        return hasSkillName_(r.skill_name, skillName);
+      })
       .map(r=>{
         const j = jobById.get(r.job_id) || {};
         const name = j.name || r.job_id || "";
@@ -102,11 +120,17 @@
       });
 
     const learnedByChars = charaLearns
-      .filter(r=>(r.skill_id||"")===id)
+      .filter(r=>{
+        const sid = (r.skill_id||"").toString().trim();
+        if (sid && sid === id) return true;
+        return hasSkillName_(r.skill_name, skillName);
+      })
       .map(r=>{
         const c = charById.get(r.chara_id) || {};
         const name = c.name || r.chara_id || "";
         const lv = (r.learn_level||"").trim();
+        return lv ? `${name}（Lv${lv}）` : name;
+      });
         return lv ? `${name}（Lv${lv}）` : name;
       });
 
