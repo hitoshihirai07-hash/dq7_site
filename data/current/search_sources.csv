@@ -6,3 +6,5 @@ items,アイテム,items.csv,item_id,name,item.html,items.html,"category,slot,no
 skills,呪文/特技,skills.csv,skill_id,name,skill.html,skills.html,"type,element,target,notes",1
 medals,メダル,medals.csv,medal_id,location,,medals.html,"era,area,how,notes",1
 story_steps,ストーリー,story_steps.csv,story_id,location,,story.html,"era,chapter,objective,notes,boss_id",1
+tools,ツール,tools.csv,tool_id,name,,,keywords,1
+tablets,石板,tablets.csv,tablet_id,location,,tablets.html,"era,area,piece,how,notes",1

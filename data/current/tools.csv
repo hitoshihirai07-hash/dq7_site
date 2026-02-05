@@ -1,0 +1,12 @@
+tool_id,name,keywords,url
+damage,ダメージ計算,ダメージ 計算 計算機 係数,./damage.html
+bosses,ボス,ボス 一覧 検索,./bosses.html
+characters,キャラクター,キャラ 一覧 検索,./characters.html
+jobs,職業,職業 一覧 検索,./jobs.html
+items,アイテム,アイテム 一覧 検索,./items.html
+medals,ちいさなメダル,メダル ちいさなメダル チェック,./medals.html
+tablets,石板,石板 かけら チェック,./tablets.html
+lucky,ラッキーパネル,ラッキー パネル 景品,./lucky_panel.html
+spells,呪文,呪文 一覧 検索,./spells.html
+skills,特技,特技 一覧 検索,./skills.html
+story,ストーリー,ストーリー チャート,./story.html

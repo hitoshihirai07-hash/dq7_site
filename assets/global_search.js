@@ -29,6 +29,8 @@ function groupOrder(label){
     "特技": 6,
     "呪文/特技": 7,
     "メダル": 8,
+    "石板": 9,
+    "ストーリー": 10,
     "その他": 99,
   };
   return order[label] || 99;
@@ -65,7 +67,13 @@ function buildDisplay(sourceKey, obj, nameCol){
     const core = [loc].filter(Boolean).join(" ");
     return [era ? `【${era}】` : "", head, core].filter(Boolean).join(" ");
   }
-  if (sourceKey === "medals"){
+    if (sourceKey === "tablets"){
+    const era = (obj.era || "").toString().trim();
+    const area = (obj.area || "").toString().trim();
+    const loc = (obj.location || "").toString().trim();
+    return [era ? `【${era}】` : "", area, loc].filter(Boolean).join(" ");
+  }
+if (sourceKey === "medals"){
     const era = (obj.era || "").toString().trim();
     const area = (obj.area || "").toString().trim();
     const loc = (obj.location || "").toString().trim();
@@ -97,6 +105,13 @@ function buildListQuery(sourceKey, obj, display){
     const area = (obj.area || "").toString().trim();
     return ([loc, area].filter(Boolean).join(" ").trim()) || stripDecor(display);
   }
+  if (sourceKey === "tablets"){
+    const loc = (obj.location || "").toString().trim();
+    const area = (obj.area || "").toString().trim();
+    const piece = (obj.piece || "").toString().trim();
+    return ([loc, area, piece].filter(Boolean).join(" ").trim()) || stripDecor(display);
+  }
+
   return stripDecor(display);
 }
 
@@ -104,6 +119,12 @@ function buildURL(source, obj, display){
   const idCol = (source.id_col || "").trim();
   const detail = (source.detail_page || "").trim();
   const list = (source.list_page || "").trim();
+
+  // tools: direct url from row
+  if (source.source_key === "tools"){
+    const u = (obj.url || "").toString().trim();
+    return u || "";
+  }
 
   if (idCol && detail){
     const id = (obj[idCol] ?? "").toString().trim();
@@ -121,6 +142,12 @@ function buildURL(source, obj, display){
       if (era) params.set("era", era);
     }
     if (source.source_key === "medals"){
+      const era = (obj.era || "").toString().trim();
+      const area = (obj.area || "").toString().trim();
+      if (era) params.set("era", era);
+      if (area) params.set("area", area);
+    }
+    if (source.source_key === "tablets"){
       const era = (obj.era || "").toString().trim();
       const area = (obj.area || "").toString().trim();
       if (era) params.set("era", era);
