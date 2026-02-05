@@ -14,8 +14,11 @@
 </head>
 <body>
 <main>
-<div class="card" style="margin-bottom:12px;"><h1 style="margin-bottom:6px;">キャラクター詳細</h1><p>キャラクター一覧から選んで開けます。</p></div>
-  <div id="wrap" class="grid two"></div>
+  <div class="card" style="margin-bottom:12px;">
+    <h1 style="margin-bottom:6px;">キャラクター詳細</h1>
+    <p>キャラクター一覧から選んで開けます。</p>
+  </div>
+  <div id="wrap" class="grid"></div>
 </main>
 
 <footer>
@@ -33,9 +36,9 @@
 </footer>
 
 <script type="module">
-import { boot } from "./assets/app_common.js";
+  import { boot } from "./assets/app_common.js";
   import { loadCSV, byId } from "./assets/data.js";
-  import { getParam, escapeHTML, makeTable } from "./assets/util.js";
+  import { getParam, escapeHTML } from "./assets/util.js";
 
   boot("キャラクター詳細 | DQ7R");
 
@@ -49,22 +52,13 @@ import { boot } from "./assets/app_common.js";
     return s ? escapeHTML(s) : NA;
   };
 
-  function toInt(v, fallback = 9999){
-    const n = parseInt((v ?? "").toString().trim(), 10);
-    return Number.isFinite(n) ? n : fallback;
-  }
-
   async function main(){
     if (!id){
       WRAP.innerHTML = `<div class="card"><h1>キャラクター詳細</h1><div class="warn">キャラクター一覧から選んでください。</div></div>`;
       return;
     }
 
-    const [chars, skills, charaLearns] = await Promise.all([
-      loadCSV("./data/current/characters.csv"),
-      loadCSV("./data/current/skills.csv"),
-      loadCSV("./data/current/chara_learns.csv"),
-    ]);
+    const chars = await loadCSV("./data/current/characters.csv");
 
     const ch = byId(chars, "chara_id", id);
     if (!ch){
@@ -74,6 +68,7 @@ import { boot } from "./assets/app_common.js";
 
     document.title = `${ch.name || "キャラクター詳細"} | DQ7R`;
 
+    // 関連キャラクター（同じ加入章を優先して3件）
     const join = (ch.join_chapter || "").toString().trim();
     const others = chars.filter(x => (x.chara_id || "").toString().trim() && (x.chara_id || "").toString().trim() !== id);
     let cand = others;
@@ -86,59 +81,7 @@ import { boot } from "./assets/app_common.js";
       ? related.map(x => `<a class="chip" href="./character.html?id=${encodeURIComponent((x.chara_id || "").toString().trim())}">${escapeHTML(x.name || x.chara_id || "")}</a>`).join(' ')
       : NA;
 
-    // skills lookup（id / name）
-    const skillsById = new Map(skills.map(s=>[(s.skill_id||"").toString().trim(), s]).filter(x=>x[0]));
-    const skillsByName = new Map();
-    for (const s of skills){
-      const n = (s.name||"").toString().trim();
-      if (!n) continue;
-      if (!skillsByName.has(n)) skillsByName.set(n, s);
-    }
-
-    const learns = charaLearns
-      .filter(r => (r.chara_id||"").toString().trim() === id)
-      .map(r=>{
-        const rawId = (r.skill_id||"").toString().trim();
-        const rawName = (r.skill_name||r.name||"").toString().trim();
-
-        let s = null;
-        if (rawId && skillsById.has(rawId)) s = skillsById.get(rawId);
-        else if (rawName && skillsByName.has(rawName)) s = skillsByName.get(rawName);
-
-        const sid = s ? (s.skill_id||"").toString().trim() : "";
-        const name = rawName || (s ? (s.name||"").toString().trim() : "");
-        const type = s ? (s.type||"").toString().trim() : "";
-        const element = s ? (s.element||"").toString().trim() : "";
-        const notes = (r.notes||"").toString().trim() || (s ? (s.notes||"").toString().trim() : "");
-
-        return {
-          lv: (r.learn_level||"").toString().trim(),
-          skill_id: sid,
-          name,
-          type,
-          element,
-          notes,
-          sort: toInt(r.learn_level, 9999),
-        };
-      })
-      .filter(x => (x.name||"").trim())
-      .sort((a,b)=> a.sort - b.sort || (a.name||"").localeCompare((b.name||""),"ja"));
-
-    const learnCols = [
-      { key:"lv", label:"Lv", render:(r)=> r.lv ? escapeHTML(`Lv${r.lv}`) : NA },
-      {
-        key:"name", label:"習得",
-        render:(r)=>{
-          const n = escapeHTML(r.name||"");
-          const sid = (r.skill_id||"").trim();
-          return sid ? `<a href="./skill.html?id=${encodeURIComponent(sid)}">${n}</a>` : n;
-        }
-      },
-      { key:"type", label:"種別", render:(r)=> (r.type||"").trim() ? escapeHTML(r.type) : NA },
-      { key:"notes", label:"メモ", render:(r)=> (r.notes||"").trim() ? escapeHTML(r.notes) : NA },
-    ];
-
-    const left = `
+    WRAP.innerHTML = `
       <section class="card">
         <h1>${escapeHTML(ch.name || "")}</h1>
         <p><b>加入：</b>${disp(ch.join_chapter)}</p>
@@ -148,16 +91,6 @@ import { boot } from "./assets/app_common.js";
         <p class="small"><a href="./characters.html">← キャラクター一覧へ戻る</a></p>
       </section>
     `;
-
-    const right = `
-      <section class="card">
-        <h2>習得（呪文・特技）</h2>
-        ${learns.length ? makeTable(learns, learnCols) : `<div class="warn">データ未登録</div>`}
-        <div class="small" style="margin-top:8px;">件数: ${learns.length}</div>
-      </section>
-    `;
-
-    WRAP.innerHTML = left + right;
   }
 
   main().catch(err=>{

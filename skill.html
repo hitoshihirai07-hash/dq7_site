@@ -48,11 +48,11 @@
     return s ? escapeHTML(s) : NA;
   };
 
-  function listCard(title, rows){
-    if (!rows.length) return `<div class="card"><h2>${escapeHTML(title)}</h2><div class="warn">なし</div></div>`;
+  function listCardHtml(title, itemsHtml){
+    if (!itemsHtml.length) return `<div class="card"><h2>${escapeHTML(title)}</h2><div class="warn">なし</div></div>`;
     return `<div class="card"><h2>${escapeHTML(title)}</h2>
       <ul class="list">
-        ${rows.map(x=>`<li>${escapeHTML(x)}</li>`).join("")}
+        ${itemsHtml.map(h=>`<li>${h}</li>`).join("")}
       </ul>
     </div>`;
   }
@@ -63,12 +63,10 @@
       return;
     }
 
-    const [skills, jobs, jobSkills, chars, charaLearns] = await Promise.all([
+    const [skills, jobs, jobSkills] = await Promise.all([
       loadCSV("./data/current/skills.csv"),
       loadCSV("./data/current/jobs.csv"),
       loadCSV("./data/current/job_skills.csv"),
-      loadCSV("./data/current/characters.csv"),
-      loadCSV("./data/current/chara_learns.csv"),
     ]);
 
     const s = byId(skills, "skill_id", id);
@@ -80,7 +78,6 @@
     document.title = `${s.name || s.skill_id} | 呪文・特技詳細`;
 
     const jobById = new Map(jobs.map(j=>[j.job_id, j]));
-    const charById = new Map(chars.map(c=>[c.chara_id, c]));
 
     const typ = (s.type||'').toString().trim();
     const others = skills.filter(x => (x.skill_id||'').toString().trim() && (x.skill_id||'').toString().trim() !== id);
@@ -106,7 +103,7 @@
       return parts.includes(t);
     }
 
-    const learnedByJobs = jobSkills
+    const learnedByJobsHtml = jobSkills
       .filter(r=>{
         const sid = (r.skill_id||"").toString().trim();
         if (sid && sid === id) return true;
@@ -114,24 +111,12 @@
       })
       .map(r=>{
         const j = jobById.get(r.job_id) || {};
-        const name = j.name || r.job_id || "";
-        const cond = (r.learn_condition||"").trim();
-        return cond ? `${name}（${cond}）` : name;
-      });
-
-    const learnedByChars = charaLearns
-      .filter(r=>{
-        const sid = (r.skill_id||"").toString().trim();
-        if (sid && sid === id) return true;
-        return hasSkillName_(r.skill_name, skillName);
-      })
-      .map(r=>{
-        const c = charById.get(r.chara_id) || {};
-        const name = c.name || r.chara_id || "";
-        const lv = (r.learn_level||"").trim();
-        return lv ? `${name}（Lv${lv}）` : name;
-      });
-        return lv ? `${name}（Lv${lv}）` : name;
+        const jid = (r.job_id||"").toString().trim();
+        const name = (j.name || jid || "").toString();
+        const cond = (r.learn_condition||"").toString().trim();
+        const label = cond ? `${name}（${cond}）` : name;
+        const safeLabel = escapeHTML(label);
+        return jid ? `<a href="./job.html?id=${encodeURIComponent(jid)}">${safeLabel}</a>` : safeLabel;
       });
 
     const left = `
@@ -161,8 +146,7 @@
 
     const right = `
       <section class="grid">
-        ${listCard("習得：職業", learnedByJobs)}
-        ${listCard("習得：キャラクター", learnedByChars)}
+        ${listCardHtml("習得：職業", learnedByJobsHtml)}
       </section>
     `;
 
