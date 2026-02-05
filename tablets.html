@@ -1,21 +1,53 @@
-<div id="tablet-list"></div>
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>石版・欠片リスト | DQ7R Database</title>
+  <link rel="stylesheet" href="./assets/style.css" />
+  <script src="./assets/app_common.js"></script>
+  <style>
+    tr.completed { background-color: #f0f0f0; color: #aaa; }
+    .check-col { text-align: center; width: 40px; }
+    input[type="checkbox"] { transform: scale(1.5); cursor: pointer; }
+    .note { color: #e74c3c; font-size: 0.9em; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header class="site-header">
+      <h1><a href="./index.html">DQ7R Database</a></h1>
+    </header>
+    
+    <main class="content">
+      <h2>石版・欠片リスト</h2>
+      <p>チェックボックスをONにすると、ブラウザに保存され、収集状況を管理できます。</p>
+      
+      <div id="tablet-list">読み込み中...</div>
+    </main>
 
-<script type="module">
-  import { renderTable } from './assets/csv.js';
+    <footer class="site-footer">
+      <p>&copy; 2026 DQ7R Database</p>
+    </footer>
+  </div>
 
-  // ページ読み込み時に実行
-  document.addEventListener('DOMContentLoaded', () => {
-    renderTable(
-      './data/current/tablets.csv', // CSVのパス
-      'tablet-list',                // 表示する場所のID
-      'tablet_id',                  // ID列の名前（CSVの1行目と合わせる）
-      [                             // 表示したい列の設定
-        { key: 'era', label: '時代' },
-        { key: 'area', label: 'エリア' },
-        { key: 'location', label: '詳細場所' },
-        { key: 'color', label: '色' },
-        { key: 'how', label: '入手方法' }
-      ]
-    );
-  });
-</script>
+  <script type="module">
+    import { renderTable } from './assets/csv.js';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderTable(
+        './data/current/tablets.csv', // CSVパス
+        'tablet-list',                // 表示場所ID
+        'tablet_id',                  // ID列（チェックボックス管理用）
+        [
+          { key: 'era', label: '時代' },
+          { key: 'area', label: 'エリア' },
+          { key: 'location', label: '詳細場所' },
+          { key: 'color', label: '色' },
+          { key: 'how', label: '入手方法' }
+        ]
+      );
+    });
+  </script>
+</body>
+</html>
