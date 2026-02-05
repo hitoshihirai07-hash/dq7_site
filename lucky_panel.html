@@ -110,6 +110,69 @@
   </style>
 </head>
 <body>
+<h2>ラッキーパネル練習場</h2>
+<p>クリックしてパネルをめくってください。</p>
+
+<div class="panel-grid" id="panel-grid">
+  </div>
+
+<button onclick="resetPanel()">リセット</button>
+
+<style>
+  .panel-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr); /* 6列 */
+    gap: 5px;
+    max-width: 400px;
+    margin: 20px auto;
+  }
+  .panel-card {
+    aspect-ratio: 1;
+    background: #ccc;
+    border: 2px solid #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    user-select: none;
+  }
+  .panel-card.open {
+    background: #fff;
+    border-color: gold;
+  }
+</style>
+
+<script>
+  // 簡易的なパネル生成ロジック
+  const items = ['剣', '盾', '薬', '爆', '！', '鎧', '剣', '盾', '薬', '鎧', '兜', '兜', '杖', '杖', '金', '金', '爪', '爪']; 
+  // ※本来はCSVから読み込むべきですが、まずは動作確認用に配列で定義
+
+  function initPanel() {
+    const grid = document.getElementById('panel-grid');
+    grid.innerHTML = '';
+    // シャッフル
+    const shuffled = [...items].sort(() => Math.random() - 0.5);
+    
+    shuffled.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'panel-card';
+      div.textContent = '?';
+      div.onclick = () => {
+        div.classList.add('open');
+        div.textContent = item;
+      };
+      grid.appendChild(div);
+    });
+  }
+
+  function resetPanel() {
+    initPanel();
+  }
+
+  // 初期化
+  initPanel();
+</script>  
 <main>
   <section class="card">
     <h1>ラッキーパネル</h1>
