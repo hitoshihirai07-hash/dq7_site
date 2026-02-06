@@ -145,6 +145,7 @@
     toNum,
     computeBaseDamage,
     computeDamageRange,
+    computeCriticalRange,
     computeHitsToKill,
   } from "./assets/damage_calc.js";
 
@@ -374,16 +375,28 @@
     EL.resist.value = key;
   }
 
-  function renderOut({ base, range, resistKey, resistMul, hits }){
+  function renderOut({ base, range, critRange, resistKey, resistMul, hits, critHits }){
     const resistLabel = RESIST_LABEL[resistKey] || "等倍";
 
-    const hitsHtml = (hits.best || hits.avg || hits.worst) ? `
+    const showHits = (hits.best || hits.avg || hits.worst);
+    const showCritHits = (critHits && (critHits.best || critHits.avg || critHits.worst));
+
+    const hitsHtml = (showHits || showCritHits) ? `
       <div class="hr"></div>
+
+      ${showHits ? `
       <div class="row" style="gap:10px; flex-wrap:wrap;">
-        <div class="pill">撃破目安：最短 <b>${hits.best ?? "—"}</b></div>
+        <div class="pill">通常：最短 <b>${hits.best ?? "—"}</b></div>
         <div class="pill">平均 <b>${hits.avg ?? "—"}</b></div>
         <div class="pill">最長 <b>${hits.worst ?? "—"}</b></div>
-      </div>
+      </div>` : ""}
+
+      ${showCritHits ? `
+      <div class="row" style="gap:10px; flex-wrap:wrap; margin-top:8px;">
+        <div class="pill">会心（確定）：最短 <b>${critHits.best ?? "—"}</b></div>
+        <div class="pill">平均 <b>${critHits.avg ?? "—"}</b></div>
+        <div class="pill">最長 <b>${critHits.worst ?? "—"}</b></div>
+      </div>` : ""}
     ` : "";
 
     EL.out.innerHTML = `
@@ -394,15 +407,22 @@
 
       <div class="hr"></div>
 
-      <div class="grid2" style="gap:10px;">
-        <div class="card" style="padding:12px;">
+      <div class="row" style="gap:10px; flex-wrap:wrap;">
+        <div class="card" style="padding:12px; min-width:220px; flex:1;">
           <div class="small">基礎ダメージ</div>
           <div style="font-size:22px; font-weight:700;">${Math.round(base)}</div>
         </div>
-        <div class="card" style="padding:12px;">
-          <div class="small">ダメージ範囲（乱数込み）</div>
+
+        <div class="card" style="padding:12px; min-width:240px; flex:1;">
+          <div class="small">通常ダメージ範囲（乱数込み）</div>
           <div style="font-size:22px; font-weight:700;">${range.min} ～ ${range.max}</div>
           <div class="small" style="margin-top:4px;">平均：${Math.round(range.avg)}</div>
+        </div>
+
+        <div class="card" style="padding:12px; min-width:240px; flex:1;">
+          <div class="small">会心（確定）ダメージ範囲</div>
+          <div style="font-size:22px; font-weight:700;">${critRange.min} ～ ${critRange.max}</div>
+          <div class="small" style="margin-top:4px;">平均：${Math.round(critRange.avg)}</div>
         </div>
       </div>
 
@@ -436,9 +456,12 @@
 
     const base = computeBaseDamage({ atk, def, mult, cfg });
     const range = computeDamageRange({ base, resistMul, cfg });
-    const hits = computeHitsToKill({ hp: EL.hp.value, dmgMin: range.min, dmgMax: range.max, dmgAvg: range.avg });
+    const critRange = computeCriticalRange({ atk, base, resistMul, cfg });
 
-    renderOut({ base, range, resistKey, resistMul, hits });
+    const hits = computeHitsToKill({ hp: EL.hp.value, dmgMin: range.min, dmgMax: range.max, dmgAvg: range.avg });
+    const critHits = computeHitsToKill({ hp: EL.hp.value, dmgMin: critRange.min, dmgMax: critRange.max, dmgAvg: critRange.avg });
+
+    renderOut({ base, range, critRange, resistKey, resistMul, hits, critHits });
   }
 
   function resetAll(){
