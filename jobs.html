@@ -19,7 +19,45 @@
 
     <p>職業を一覧表示します。検索で絞り込み、名前を押すと詳細ページに移動します。</p>
 
-    <div class="toolbar">
+    
+
+    <style>
+      /* jobs route helper */
+      .route-wrap{display:grid; gap:12px; grid-template-columns:1fr; margin:12px 0 4px;}
+      @media (min-width: 920px){ .route-wrap{grid-template-columns: 1fr 1fr;} }
+      .route-panel{border:1px solid var(--line); border-radius:12px; padding:12px; background:#fff;}
+      .route-panel h2{margin:0 0 8px;}
+      .route-lines{display:flex; flex-direction:column; gap:6px;}
+      .route-line{display:flex; gap:8px; align-items:center; flex-wrap:wrap; line-height:1.5;}
+      .route-line .arrow{opacity:.7}
+      .route-line a{font-weight:700}
+      .route-badge{font-size:11px; padding:2px 8px; border-radius:999px; border:1px solid var(--line); background:var(--chip); color:var(--text);}
+      .route-picks{display:flex; flex-wrap:wrap; gap:8px; align-items:center;}
+      .route-pick{display:inline-flex; gap:6px; align-items:center; padding:6px 10px; border:1px solid var(--line); border-radius:999px; background:#fff;}
+      .route-pick input{transform: translateY(0.5px);}
+      .route-steps ol{margin:8px 0 0; padding-left:18px;}
+      .route-steps li{margin:4px 0; color:var(--text);}
+      .route-muted{color:var(--muted);}
+      .route-warn{margin-top:8px;}
+    </style>
+
+    <div class="route-wrap">
+      <section class="route-panel">
+        <h2>早見表</h2>
+        <div id="jobQuickRef" class="route-lines small">読み込み中...</div>
+      </section>
+
+      <section class="route-panel">
+        <h2>ルートナビ</h2>
+        <div class="toolbar" style="margin:0;">
+          <select id="routeTarget"></select>
+          <div id="routePicks" class="route-picks"></div>
+        </div>
+        <div id="routeOut" class="route-steps" style="margin-top:10px;"></div>
+      </section>
+    </div>
+
+<div class="toolbar">
       <input id="q" class="input" placeholder="検索（名前 / 解放条件 / メモ）" />
       <select id="group">
         <option value="all">グループ：すべて</option>
@@ -53,6 +91,12 @@
   const Q = qs("#q");
   const GROUP = qs("#group");
   const OUT = qs("#out");
+
+  const ROUTE_TARGET = qs("#routeTarget");
+  const ROUTE_PICKS = qs("#routePicks");
+  const ROUTE_OUT = qs("#routeOut");
+  const QUICK = qs("#jobQuickRef");
+
 
   const cols = [
     {
@@ -106,8 +150,290 @@
     return shown.map(([k,v]) => `${k}${v}`).join(" ");
   }
 
+
+  // ---- 職業ルート（早見表 / ナビ） ----
+  function parseUnlock_(s){
+    const t = (s||"").trim();
+    if (!t) return { kind:"none" };
+    if (t.includes("最初から")) return { kind:"none" };
+
+    // 勇者: 上級職3つ以上をマスター
+    const mGroup = t.match(/上級職\s*([0-9０-９]+)\s*つ以上をマスター/);
+    if (mGroup){
+      const n = parseInt(mGroup[1].replace(/[０-９]/g, d => "０１２３４５６７８９".indexOf(d)), 10);
+      return { kind:"group", group:"上級職", count: Number.isFinite(n) ? n : 3 };
+    }
+
+    // 「A、B、Cのいずれか2つをマスター」
+    const mPick = t.match(/(.+?)のいずれか\s*([0-9０-９]+)\s*つをマスター/);
+    if (mPick){
+      const raw = mPick[1];
+      const n = parseInt(mPick[2].replace(/[０-９]/g, d => "０１２３４５６７８９".indexOf(d)), 10);
+      const names = raw.split(/[、,]/).map(x=>x.trim()).filter(Boolean);
+      return { kind:"pick", names, count: Number.isFinite(n) ? n : 2 };
+    }
+
+    // 「A、Bをマスター」 / 「A、B、Cをマスター」
+    const mList = t.match(/(.+?)をマスター/);
+    if (mList){
+      const names = mList[1].split(/[、,]/).map(x=>x.trim()).filter(Boolean);
+      return { kind:"list", names, count: names.length };
+    }
+
+    return { kind:"text", text:t };
+  }
+
+  function buildNameMap_(jobs){
+    const map = {};
+    for (const r of jobs){
+      const name = (r.name||"").trim();
+      if (!name) continue;
+      map[name] = (r.job_id||"").trim();
+    }
+    return map;
+  }
+
+  function linkJob_(name, nameToId){
+    const id = nameToId[name];
+    const safe = escapeHTML(name||"");
+    if (!id) return safe;
+    return `<a href="./job.html?id=${encodeURIComponent(id)}">${safe}</a>`;
+  }
+
+  function fmtReqText_(req, nameToId){
+    if (!req || req.kind === "none") return "最初から";
+    if (req.kind === "group") return `上級職${req.count}つ以上`;
+    if (req.kind === "pick") return `(${req.names.map(n=>linkJob_(n,nameToId)).join(" / ")} のうち${req.count}つ)`;
+    if (req.kind === "list") return req.names.map(n=>linkJob_(n,nameToId)).join(" ＋ ");
+    if (req.kind === "text") return escapeHTML(req.text);
+    return "－";
+  }
+
+  function uniqPush_(arr, set, v){
+    if (set.has(v)) return;
+    set.add(v);
+    arr.push(v);
+  }
+
+  function stepsToMaster_(jobName, jobByName, nameToId, out, visited){
+    if (!jobName || visited.has(jobName)) return;
+    visited.add(jobName);
+
+    const job = jobByName[jobName];
+    const req = parseUnlock_(job ? job.unlock_condition : "");
+
+    // 前提があるなら先にそっちをマスター（＝この職をマスターするための最短）
+    if (req.kind === "list"){
+      for (const p of req.names){
+        stepsToMaster_(p, jobByName, nameToId, out, visited);
+      }
+    } else if (req.kind === "pick"){
+      // pick はここでは「この職をマスターする」用途では使わない想定
+      // （ナビ側で選択を受け取って prerequisites として処理）
+    } else if (req.kind === "group"){
+      // 同上
+    }
+    out.push(jobName);
+  }
+
+  function renderQuickRef_(jobs, nameToId){
+    const adv = jobs.filter(r=>(r.group||"").trim()==="上級職");
+    const master = jobs.filter(r=>(r.group||"").trim()==="マスター職");
+
+    const lines = [];
+
+    function addSection(title){
+      lines.push(`<div class="route-line"><span class="route-badge">${escapeHTML(title)}</span><span class="route-muted">条件</span></div>`);
+    }
+
+    addSection("上級職");
+    for (const r of adv){
+      const target = (r.name||"").trim();
+      const req = parseUnlock_(r.unlock_condition);
+      const left = fmtReqText_(req, nameToId);
+      lines.push(`<div class="route-line">${left} <span class="arrow">→</span> ${linkJob_(target, nameToId)}</div>`);
+    }
+
+    lines.push(`<div style="margin:8px 0;border-top:1px solid var(--line)"></div>`);
+
+    addSection("マスター職");
+    for (const r of master){
+      const target = (r.name||"").trim();
+      const req = parseUnlock_(r.unlock_condition);
+      const left = fmtReqText_(req, nameToId);
+      lines.push(`<div class="route-line">${left} <span class="arrow">→</span> ${linkJob_(target, nameToId)}</div>`);
+    }
+
+    QUICK.innerHTML = `<div class="route-lines">${lines.join("")}</div>`;
+  }
+
+  function initRouteNav_(jobs){
+    const nameToId = buildNameMap_(jobs);
+    const jobByName = {};
+    for (const r of jobs){
+      const n = (r.name||"").trim();
+      if (n) jobByName[n] = r;
+    }
+
+    const adv = jobs.filter(r=>(r.group||"").trim()==="上級職").map(r=>(r.name||"").trim());
+    const master = jobs.filter(r=>(r.group||"").trim()==="マスター職").map(r=>(r.name||"").trim());
+
+    // option build
+    const optAdv = adv.map(n=>`<option value="${escapeHTML(n)}">${escapeHTML(n)}</option>`).join("");
+    const optMaster = master.map(n=>`<option value="${escapeHTML(n)}">${escapeHTML(n)}</option>`).join("");
+    ROUTE_TARGET.innerHTML =
+      `<option value="">目標: 選択</option>` +
+      `<optgroup label="上級職">${optAdv}</optgroup>` +
+      `<optgroup label="マスター職">${optMaster}</optgroup>`;
+
+    function getDefaultPicks_(req){
+      if (req.kind === "pick"){
+        return req.names.slice(0, req.count);
+      }
+      if (req.kind === "group"){
+        // 勇者: 上級職の中から定番3つ（なければ先頭から）
+        const prefer = ["バトルマスター","パラディン","賢者"];
+        const picked = [];
+        for (const p of prefer){
+          if (adv.includes(p) && !picked.includes(p)) picked.push(p);
+        }
+        for (const a of adv){
+          if (picked.length >= req.count) break;
+          if (!picked.includes(a)) picked.push(a);
+        }
+        return picked;
+      }
+      if (req.kind === "list") return req.names.slice();
+      return [];
+    }
+
+    function renderPicks_(req, picked){
+      ROUTE_PICKS.innerHTML = "";
+      if (req.kind !== "pick" && req.kind !== "group") return;
+
+      const names = (req.kind === "group") ? adv : req.names;
+      const need = req.count;
+
+      // label
+      const lab = document.createElement("span");
+      lab.className = "small route-muted";
+      lab.textContent = (req.kind === "group") ? `上級職を${need}つ以上選択` : `${need}つ選択`;
+      ROUTE_PICKS.appendChild(lab);
+
+      for (const name of names){
+        const id = `pick_${name}`;
+        const label = document.createElement("label");
+        label.className = "route-pick";
+        label.setAttribute("for", id);
+
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.id = id;
+        cb.value = name;
+        cb.checked = picked.includes(name);
+
+        const span = document.createElement("span");
+        span.textContent = name;
+
+        cb.addEventListener("change", (ev)=>{
+          const sel = getPicked_();
+          if (req.kind === "pick" && sel.length > need){
+            // fixed count: revert
+            cb.checked = false;
+          }
+          update_();
+        });
+
+        label.appendChild(cb);
+        label.appendChild(span);
+        ROUTE_PICKS.appendChild(label);
+      }
+
+      update_();
+    }
+
+    function getPicked_(){
+      const cbs = Array.from(ROUTE_PICKS.querySelectorAll('input[type="checkbox"]'));
+      return cbs.filter(x=>x.checked).map(x=>x.value);
+    }
+
+    function renderOut_(targetName, req, picked){
+      if (!targetName){
+        ROUTE_OUT.innerHTML = `<div class="small route-muted">上級職 / マスター職を選ぶと、必要な“マスター順”を表示します。</div>`;
+        return;
+      }
+
+      // prerequisites
+      let prereqs = [];
+      if (req.kind === "list") prereqs = req.names.slice();
+      else if (req.kind === "pick") prereqs = picked.slice();
+      else if (req.kind === "group") prereqs = picked.slice();
+      else prereqs = [];
+
+      // validation
+      if (req.kind === "pick" && prereqs.length !== req.count){
+        ROUTE_OUT.innerHTML = `<div class="warn route-warn">選択数が足りません（${req.count}つ選択）</div>`;
+        return;
+      }
+      if (req.kind === "group" && prereqs.length < req.count){
+        ROUTE_OUT.innerHTML = `<div class="warn route-warn">選択数が足りません（上級職を${req.count}つ以上）</div>`;
+        return;
+      }
+
+      // steps: master prereq jobs (and their prerequisites)
+      const steps = [];
+      const visited = new Set();
+      for (const p of prereqs){
+        const buf = [];
+        stepsToMaster_(p, jobByName, nameToId, buf, visited);
+        // stepsToMaster_ pushes in dependency order but includes duplicates inside visited check
+        for (const x of buf) steps.push(x);
+      }
+
+      // render
+      const needText = (req.kind==="none") ? "最初から" : fmtReqText_(req, nameToId);
+      const li = steps.map(n=>`<li>${linkJob_(n,nameToId)}をマスター</li>`).join("");
+
+      const end = `<div class="small route-muted" style="margin-top:8px;">最後：${linkJob_(targetName,nameToId)}へ転職</div>`;
+
+      ROUTE_OUT.innerHTML = `
+        <div class="small route-muted">目標：${linkJob_(targetName,nameToId)}</div>
+        <div class="small route-muted">条件：${needText}</div>
+        <ol>${li || "<li>（前提なし）</li>"}</ol>
+        ${end}
+      `;
+    }
+
+    function update_(){
+      const targetName = (ROUTE_TARGET.value||"").trim();
+      const job = jobByName[targetName];
+      const req = parseUnlock_(job ? job.unlock_condition : "");
+      const picked = getPicked_();
+      renderOut_(targetName, req, picked);
+    }
+
+    ROUTE_TARGET.addEventListener("change", ()=>{
+      const targetName = (ROUTE_TARGET.value||"").trim();
+      const job = jobByName[targetName];
+      const req = parseUnlock_(job ? job.unlock_condition : "");
+      const picked = getDefaultPicks_(req);
+      renderPicks_(req, picked);
+      update_();
+    });
+
+    // initial
+    ROUTE_OUT.innerHTML = `<div class="small route-muted">上級職 / マスター職を選ぶと、必要な“マスター順”を表示します。</div>`;
+  }
+
+
   async function main(){
     const jobs = await loadCSV("./data/current/jobs.csv");
+
+    // route helper
+    const nameToId = buildNameMap_(jobs);
+    renderQuickRef_(jobs, nameToId);
+    initRouteNav_(jobs);
+
 
     // group options
     const groups = Array.from(new Set(jobs.map(r=>(r.group||"").trim()).filter(Boolean)))
