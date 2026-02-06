@@ -111,6 +111,43 @@ export function computeDamageRange({ base, resistMul = 1, cfg }) {
 }
 
 
+// 会心（確定）ダメージ範囲
+// 仕様書にある「(1)守備無視: 攻撃力×0.95〜1.05」「(2)基本ダメ×1.2」を両方計算し、高い方を採用。
+// ※会心率（きようさ等）は扱わず、確定会心の“ダメージ”だけを出す。
+export function computeCriticalRange({ atk, base, resistMul = 1, cfg }) {
+  const a0 = Math.trunc(toNum(atk, 0));
+  const b0 = Math.trunc(toNum(base, 0));
+  const r = toNum(resistMul, 1);
+
+  // (1) 守備無視：攻撃力そのまま × 0.95〜1.05（端数切り捨て）
+  let aMin = Math.trunc(a0 * 0.95);
+  let aMax = Math.trunc(a0 * 1.05);
+  if (aMin < 1) aMin = 1;
+  if (aMax < 1) aMax = 1;
+
+  // (2) 基本ダメ×1.2（乱数は通常計算の乱数レンジを使用 → その後に1.2倍）
+  // まず耐性なしで通常の乱数幅を作る
+  const normalNoResist = computeDamageRange({ base: b0, resistMul: 1, cfg });
+  let bMin = Math.trunc(normalNoResist.min * 1.2);
+  let bMax = Math.trunc(normalNoResist.max * 1.2);
+  if (bMin < 1) bMin = 1;
+  if (bMax < 1) bMax = 1;
+
+  // 高い方を採用（範囲なので min/max はそれぞれ max を取る）
+  const rawMin = Math.max(aMin, bMin);
+  const rawMax = Math.max(aMax, bMax);
+
+  // 耐性倍率（最後に反映）
+  if (r === 0) return { min: 0, max: 0, avg: 0 };
+
+  const x = Math.trunc(rawMin * r);
+  const y = Math.trunc(rawMax * r);
+  const min = Math.min(x, y);
+  const max = Math.max(x, y);
+  const avg = (min + max) / 2;
+  return { min, max, avg };
+}
+
 export function ceilDiv(a, b) {
   if (b === 0) return Infinity;
   return Math.ceil(a / b);
