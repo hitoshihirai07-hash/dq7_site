@@ -3,50 +3,291 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ちいさなメダル | DQ7R Database</title>
   <link rel="stylesheet" href="./assets/style.css" />
-  <script src="./assets/app_common.js"></script>
-  <style>
-    tr.completed { background-color: #f0f0f0; color: #aaa; }
-    .check-col { text-align: center; width: 40px; }
-    input[type="checkbox"] { transform: scale(1.5); cursor: pointer; }
+  <title>ちいさなメダル</title>
+
+  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./assets/icon-192.png" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <meta name="theme-color" content="#e8892f" />  <meta name="description" content="DQ7R のちいさなメダル関連メモ一覧。検索・絞り込み対応。" />
+<style>
+    .tabs{display:flex; gap:8px; flex-wrap:wrap; margin:12px 0;}
+    .tab{border:1px solid var(--line); background:var(--card); padding:8px 10px; border-radius:999px; cursor:pointer; font-size:14px;}
+    .tab.active{background:var(--accent); color:#fff; border-color:var(--accent);}
+    .tab-panel.hidden{display:none;}
   </style>
 </head>
-<body>
-  <div id="app">
-    <header class="site-header">
-      <h1><a href="./index.html">DQ7R Database</a></h1>
-    </header>
-    
-    <main class="content">
-      <h2>ちいさなメダル入手場所</h2>
-      <p>取り逃し防止用のチェックリストです。</p>
-      
-      <div id="medal-list">読み込み中...</div>
-    </main>
 
-    <footer class="site-footer">
-      <p>&copy; 2026 DQ7R Database</p>
-    </footer>
+<body>
+<main>
+  <section class="card">
+    <h1>ちいさなメダル</h1>
+
+    <p>ちいさなメダル関連のメモを一覧表示します。検索で絞り込みできます。</p>
+
+<div class="tabs" role="tablist" aria-label="ちいさなメダル">
+  <button class="tab active" type="button" data-tab="collect">回収チェック</button>
+  <button class="tab" type="button" data-tab="prizes">景品一覧</button>
+</div>
+
+<div id="tab-collect" class="tab-panel">
+    <div class="toolbar">
+      <input id="q" class="input" placeholder="検索（場所 / 入手方法 / メモ）" />
+      <select id="area" class="select">
+        <option value="all">エリア: 全て</option>
+      </select>
+      <select id="era" class="select">
+        <option value="all">時代: 全て</option>
+        <option value="過去">過去</option>
+        <option value="現代">現代</option>
+      </select>
+      <label class="chip" style="cursor:pointer;">
+        <input id="onlyUnchecked" type="checkbox" style="vertical-align:middle; margin-right:6px;">
+        未チェックのみ
+      </label>
+      <button id="reset" class="btn ghost" type="button">チェック全解除</button>
+    </div>
+
+    <div class="progress">
+      <div class="progress-row">
+        <div class="small">チェック数: <b id="done">0</b> / <b id="total">0</b></div>
+        <div class="small" id="pct">0%</div>
+      </div>
+      <progress id="bar" value="0" max="100"></progress>
+    </div>
+
+
+  <div id="out"></div>
   </div>
 
-  <script type="module">
-    import { renderTable } from './assets/csv.js';
+  <div id="tab-prizes" class="tab-panel hidden">
+    <p class="small" style="margin:6px 0 10px;">ちいさなメダルの景品一覧です。</p>
+    <div id="prizeOut"></div>
+  </div>
+</section>
+</main>
 
-    document.addEventListener('DOMContentLoaded', () => {
-      renderTable(
-        './data/current/medals.csv',
-        'medal-list',
-        'medal_id', // チェックボックス管理用ID
-        [
-          { key: 'era', label: '時代' },
-          { key: 'area', label: 'エリア' },
-          { key: 'location', label: '場所' },
-          { key: 'how', label: '入手方法' },
-          { key: 'notes', label: '備考' }
-        ]
-      );
+<footer>
+  <div class="footer-inner">
+    <div class="footer-note">
+      <div class="footer-links">
+        <a href="./about.html">このサイトについて</a>
+        <a href="./privacy.html">プライバシーポリシー</a>
+        <a href="./contact.html">お問い合わせ</a>
+      </div>
+      <div class="small" style="margin-top:6px;">※非公式ファンサイトです。掲載情報は参考用です。</div>
+    </div>
+    <div class="footer-copy small">© 2026 DQ7R データベース</div>
+  </div>
+</footer>
+
+<script type="module">
+
+  import { boot } from "./assets/app_common.js";
+  import { loadCSV } from "./assets/data.js";
+  import { qs, escapeHTML } from "./assets/util.js";
+
+  boot("ちいさなメダル | DQ7R");
+
+  const STORAGE_KEY = "dq7_medals_checked_v1";
+
+  const Q = qs("#q");
+  const AREA = qs("#area");
+  const ERA = qs("#era");
+  const ONLY = qs("#onlyUnchecked");
+  const RESET = qs("#reset");
+  const OUT = qs("#out");
+
+const PRIZE_OUT = qs("#prizeOut");
+const TAB_BTNS = Array.from(document.querySelectorAll(".tab[data-tab]"));
+const TAB_COLLECT = qs("#tab-collect");
+const TAB_PRIZES = qs("#tab-prizes");
+
+  const PARAMS = new URLSearchParams(location.search);
+  const QP_RAW = PARAMS.get("q") || "";
+  const QP = (QP_RAW||"").toString().replace(/【[^】]*】/g," ").replace(/#[0-9]+/g," ").replace(/\s+/g," ").trim();
+  const ERAP = PARAMS.get("era") || "";
+  const AREAP = PARAMS.get("area") || "";
+  if (QP) Q.value = QP;
+  // ERA/AREA options are built after loading CSV, apply later.
+
+  const DONE = qs("#done");
+  const TOTAL = qs("#total");
+  const PCT = qs("#pct");
+  const BAR = qs("#bar");
+
+  function norm(s){ return (s||"").toLowerCase(); }
+
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return {};
+      const obj = JSON.parse(raw);
+      return (obj && typeof obj === "object") ? obj : {};
+    }catch(e){ return {}; }
+  }
+  function saveState(state){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+  }
+
+  function updateProgress(total, done){
+    TOTAL.textContent = String(total);
+    DONE.textContent = String(done);
+    const pct = total ? Math.round((done/total)*100) : 0;
+    PCT.textContent = pct + "%";
+    BAR.max = 100;
+    BAR.value = pct;
+  }
+
+  function renderTable(rows, state){
+    const thead = `
+      <thead><tr>
+        <th style="width:84px;">チェック</th>
+        <th style="width:72px;">時代</th>
+        <th>エリア</th>
+        <th>場所</th>
+        <th>入手</th>
+        <th>メモ</th>
+      </tr></thead>
+    `;
+
+    const tbody = `<tbody>${
+      rows.map(r=>{
+        const id = (r.medal_id||"").trim();
+        const checked = !!state[id];
+        const badge = checked ? `<span class="chip ok">済</span>` : `<span class="chip">未</span>`;
+        return `
+          <tr>
+            <td>
+              <label style="display:flex; gap:8px; align-items:center; cursor:pointer;">
+                <input type="checkbox" class="medal-cb" data-id="${escapeHTML(id)}" ${checked ? "checked" : ""}>
+                ${badge}
+              </label>
+            </td>
+            <td>${escapeHTML(r.era ?? "")}</td>
+            <td>${escapeHTML(r.area ?? "")}</td>
+            <td>${escapeHTML(r.location ?? "")}</td>
+            <td>${escapeHTML(r.how ?? "")}</td>
+            <td>${escapeHTML(r.notes ?? "")}</td>
+          </tr>
+        `;
+      }).join("")
+    }</tbody>`;
+
+    return `<div class="table-wrap"><table>${thead}${tbody}</table></div>`;
+  }
+
+function renderPrizeTable(rows){
+  const sorted = rows.slice().sort((a,b)=> (Number(a.need)||0) - (Number(b.need)||0));
+  const thead = `<thead><tr><th>景品</th><th style="width:110px;">必要枚数</th></tr></thead>`;
+  const tbody = `<tbody>${
+    sorted.map(r=>`
+      <tr>
+        <td>${escapeHTML(r.prize ?? "")}</td>
+        <td style="text-align:right;">${escapeHTML(String(r.need ?? ""))}</td>
+      </tr>
+    `).join("")
+  }</tbody>`;
+  return `<div class="table-wrap"><table>${thead}${tbody}</table></div>`;
+}
+
+function setTab(tab){
+  const isPrizes = tab === "prizes";
+  TAB_COLLECT.classList.toggle("hidden", isPrizes);
+  TAB_PRIZES.classList.toggle("hidden", !isPrizes);
+  TAB_BTNS.forEach(b=>b.classList.toggle("active", b.dataset.tab === tab));
+}
+
+  async function main(){
+    const medals = await loadCSV("./data/current/medals.csv");
+    const prizes = await loadCSV("./data/current/medal_prizes.csv");
+
+    const areas = Array.from(new Set(medals.map(r=>(r.area||"").trim()).filter(Boolean)))
+      .sort((a,b)=>a.localeCompare(b,"ja"));
+    AREA.innerHTML = `<option value="all">エリア: 全て</option>` + areas.map(a=>`<option value="${escapeHTML(a)}">${escapeHTML(a)}</option>`).join("");
+    const eras = Array.from(new Set(medals.map(r=>(r.era||"").trim()).filter(Boolean)));
+    const order = {"過去":1,"現代":2};
+    eras.sort((a,b)=> (order[a]||99) - (order[b]||99) || a.localeCompare(b,"ja"));
+    ERA.innerHTML = `<option value="all">時代: 全て</option>` + eras.map(e=>`<option value="${escapeHTML(e)}">${escapeHTML(e)}</option>`).join("");
+
+    if (AREAP) AREA.value = AREAP;
+    if (ERAP) ERA.value = ERAP;
+
+    let state = loadState();
+
+    function render(){
+      const q = norm(Q.value.trim());
+      const area = AREA.value;
+      const era = ERA.value;
+      const only = ONLY.checked;
+
+      const filtered = medals.filter(r=>{
+        const id = (r.medal_id||"").trim();
+        if (area !== "all" && (r.area||"").trim() !== area) return false;
+        if (era !== "all" && (r.era||"").trim() !== era) return false;
+        if (only && state[id]) return false;
+        if (!q) return true;
+        const blob = [r.medal_id,r.era,r.area,r.location,r.how,r.notes].join(" ").toLowerCase();
+        return blob.includes(q);
+      });
+
+      const total = medals.length;
+      const done = Object.keys(state).filter(k=>state[k]).length;
+      updateProgress(total, done);
+
+      OUT.innerHTML = renderTable(filtered, state) +
+        `<div class="small" style="margin-top:10px;">表示件数: ${filtered.length}</div>`;
+
+      OUT.querySelectorAll(".medal-cb").forEach(cb=>{
+        cb.addEventListener("change", (e)=>{
+          const id = e.target.getAttribute("data-id");
+          state[id] = e.target.checked;
+          saveState(state);
+          render();
+        });
+      });
+    }
+
+    RESET.addEventListener("click", ()=>{
+      state = {};
+      saveState(state);
+      render();
     });
-  </script>
+
+    Q.addEventListener("input", render);
+    AREA.addEventListener("change", render);
+    ERA.addEventListener("change", render);
+    ONLY.addEventListener("change", render);
+
+
+  // 景品一覧（初期表示）
+  function renderPrizes(){
+    if (!prizes || prizes.length === 0){
+      PRIZE_OUT.innerHTML = `<div class="warn">景品データがありません（data/current/medal_prizes.csv を確認してください）。</div>`;
+      return;
+    }
+    PRIZE_OUT.innerHTML = renderPrizeTable(prizes) + `<div class="small" style="margin-top:10px;">件数: ${prizes.length}</div>`;
+  }
+  renderPrizes();
+
+  // Tab UI
+  TAB_BTNS.forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      setTab(btn.dataset.tab || "collect");
+    });
+  });
+
+  const TABP = (PARAMS.get("tab") || "").toLowerCase();
+  if (TABP === "prizes") setTab("prizes");
+  else setTab("collect");
+
+  render();
+}
+
+main().catch(err=>{
+    OUT.innerHTML = `<div class="warn">${escapeHTML(err.message || String(err))}</div>`;
+  });
+
+</script>
 </body>
 </html>
