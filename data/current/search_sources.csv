@@ -7,3 +7,4 @@ skills,呪文/特技,skills.csv,skill_id,name,skill.html,skills.html,"type,eleme
 medals,メダル,medals.csv,medal_id,location,,medals.html,"era,area,how,notes",1
 story_steps,ストーリー,story_steps.csv,story_id,location,,story.html,"era,chapter,objective,notes,boss_id",1
 missables,その他,missables_qa.csv,,question,,missables.html,"answer,keywords,notes",1
+strong_monster,強モンスター,strong_monster.csv,No,強モンスター,,strong_monsters.html,"出現場所,ドロップ",1

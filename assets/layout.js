@@ -16,7 +16,7 @@ export function renderHeader({title="DQ7R データベース", subtitle=""} = {}
       </div>
 
       <div class="gsearch">
-        <input id="globalSearchInput" type="search" placeholder="用語検索（ボス/職業/キャラ/アイテム/呪文/特技/メダル/ラッキーパネル/ダメージ計算/取り逃しQ&A）" autocomplete="off" />
+        <input id="globalSearchInput" type="search" placeholder="用語検索（ボス/職業/キャラ/アイテム/呪文/特技/メダル/ラッキーパネル/ダメージ計算/取り逃しQ&A/強モンスター）" autocomplete="off" />
         <div id="globalSearchPanel" class="gsearch-panel" hidden></div>
       </div>
 
@@ -25,7 +25,8 @@ export function renderHeader({title="DQ7R データベース", subtitle=""} = {}
         <a href="./missables.html">取り逃しQ&A</a>
         <a href="./damage.html">ダメージ計算</a>
         <a href="./bosses.html">ボス</a>
-        <a href="./characters.html">キャラクター</a>
+                <a href="./strong_monsters.html">強モンスター</a>
+<a href="./characters.html">キャラクター</a>
         <a href="./jobs.html">職業</a>
         <a href="./items.html">アイテム</a>
         <a href="./medals.html">ちいさなメダル</a>
