@@ -22,6 +22,7 @@ export function renderHeader({title="DQ7R データベース", subtitle=""} = {}
 
       <nav>
         <a href="./index.html">トップ</a>
+        <a href="./buy.html">購入リンク</a>
         <a href="./missables.html">取り逃しQ&A</a>
         <a href="./damage.html">ダメージ計算</a>
         <a href="./bosses.html">ボス</a>
