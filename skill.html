@@ -118,11 +118,8 @@
         const safeLabel = escapeHTML(label);
         return jid ? `<a href="./job.html?id=${encodeURIComponent(jid)}">${safeLabel}</a>` : safeLabel;
       });
-
-    // MP は今後検証で列追加予定（現時点では回数/命中欄に入っていることがある）
-    const mpRaw = (s.mp ?? "").toString().trim();
-    const mpDisp = mpRaw ? disp(s.mp) : disp(s.hit);
-    const hitDisp = mpRaw ? disp(s.hit) : NA;
+    const mpDisp = disp(s.mp);
+    const hitDisp = disp(s.hit);
 
     const left = `
       <section class="card">
