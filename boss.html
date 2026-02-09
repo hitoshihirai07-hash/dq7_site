@@ -91,7 +91,7 @@
       map.get(base).items.push(item);
     }
     for (const g of map.values()){
-      g.items.sort((a,b)=>(V_ORDER[a._variant||""] - V_ORDER[b._variant||""]) || (trim(a.name).localeCompare(trim(b.name),"ja")));
+      g.items.sort((a,b)=>((V_ORDER[a._variant||""] - V_ORDER[b._variant||""]) || (trim(a.boss_id).localeCompare(trim(b.boss_id),"ja"))));
       g.main = g.items.find(x => x._variant === "A") || g.items.find(x => x._variant === "") || g.items[0];
       // Aが無くて "" がある場合でも、タブ表示用にA扱いしたいケースがある
       g.hasLetter = g.items.some(x => !!x._variant);
