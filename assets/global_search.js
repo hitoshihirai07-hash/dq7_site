@@ -232,6 +232,12 @@ export async function initGlobalSearch(){
       const extraCols = splitCols(s.extra_cols);
 
       for (const obj of data){
+        // bosses: A/B/C/D（雑魚・同一戦闘の枝）は一覧に出さず、本ボス（A）側に寄せる
+        if (s.source_key === "bosses"){
+          const bid = (obj[idCol] ?? "").toString().trim();
+          if (bid && bid.match(/^(.*?)(?:[_-])?[B-D]$/i)) continue;
+        }
+
         const display = buildDisplay(s.source_key, obj, nameCol);
         if (!display) continue;
 

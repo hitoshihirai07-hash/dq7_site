@@ -11,18 +11,22 @@
   <link rel="manifest" href="./manifest.webmanifest" />
   <meta name="theme-color" content="#e8892f" />
   <meta name="description" content="DQ7R のボス詳細ページ。" />
-
   <style>
-    .tabbar{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 10px;}
-    .tabbtn{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:1px solid rgba(0,0,0,.14);text-decoration:none;line-height:1.2;}
-    .tabbtn.active{background:rgba(232,137,47,.14);border-color:rgba(232,137,47,.55);}
-    .tabbtn .t{font-weight:700;}
-    .tabbtn .n{font-size:12px;opacity:.85;}
+    .tabs{display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 6px;}
+    .tabbtn{
+      appearance:none; border:1px solid var(--line); background:#fff; color:var(--text);
+      border-radius:999px; padding:6px 10px; font-size:12px; cursor:pointer;
+    }
+    .tabbtn.active{border-color:var(--accent2); background:rgba(232,137,47,.10);}
   </style>
 </head>
 <body>
 <main>
-<div class="card" style="margin-bottom:12px;"><h1 style="margin-bottom:6px;">ボス詳細</h1><p>ボス一覧から選んで開けます。</p></div>
+  <div class="card" style="margin-bottom:12px;">
+    <h1 style="margin-bottom:6px;">ボス詳細</h1>
+    <p>ボス一覧から選んで開けます。</p>
+  </div>
+
   <div id="wrap" class="grid two"></div>
 </main>
 
@@ -42,12 +46,12 @@
 
 <script type="module">
   import { boot } from "./assets/app_common.js";
-  import { loadCSV, byId } from "./assets/data.js";
+  import { loadCSV } from "./assets/data.js";
   import { getParam, escapeHTML } from "./assets/util.js";
 
   boot("ボス詳細 | DQ7R");
 
-  const id = getParam("id") || "";
+  const idParam = (getParam("id") || "").toString().trim();
   const WRAP = document.getElementById("wrap");
 
   const NA = '<span class="muted">—</span>';
@@ -65,61 +69,34 @@
     absorb: "吸収"
   };
 
-  // ===== グルーピング（A/B/C/D, 雑魚の紐づけ） =====
-  function deriveGroupId(id){
-    const s = (id||"").toString().trim();
-    if (!s) return "";
-    // boss_001_A / boss_001A / boss-001-A などを想定
-    return s.replace(/([_\-])?[A-D]$/i, "");
+  function trim(s){ return (s||"").toString().trim(); }
+
+  // boss_id 末尾の A/B/C/D を分解
+  function splitVariantId(bossId){
+    const s = trim(bossId);
+    const m = s.match(/^(.*?)(?:[_-])?([A-D])$/i);
+    if (!m) return { base:s, variant:"" };
+    return { base: m[1], variant: m[2].toUpperCase() };
   }
-  function deriveVariant(id){
-    const s = (id||"").toString().trim();
-    const m = s.match(/([A-D])$/i);
-    return m ? m[1].toUpperCase() : "";
-  }
-  function isMinionRow(r){
-    const p = (r.parent_boss_id || r.parent_id || "").toString().trim();
-    if (p) return true;
-    const f = (r.is_minion || "").toString().trim().toLowerCase();
-    return (f === "1" || f === "true" || f === "yes" || f === "y");
-  }
-  function pickMain(rows){
-    if (!rows || !rows.length) return null;
-    const byFlag = rows.find(r => (r.is_main||"").toString().trim().toLowerCase() === "1" || (r.is_main||"").toString().trim().toLowerCase()==="true");
-    if (byFlag) return byFlag;
-    const byA = rows.find(r => ((r.variant||"").toString().trim().toUpperCase() || deriveVariant(r.boss_id)) === "A");
-    if (byA) return byA;
-    const g = (rows[0].group_id || deriveGroupId(rows[0].boss_id)).toString().trim();
-    const byEq = rows.find(r => (r.boss_id||"").toString().trim() === g);
-    if (byEq) return byEq;
-    return rows[0];
-  }
-  function sortTabItems(a,b){
-    const order = {A:1,B:2,C:3,D:4};
-    const la = ((a.variant||"").toString().trim().toUpperCase() || deriveVariant(a.boss_id) || "").toUpperCase();
-    const lb = ((b.variant||"").toString().trim().toUpperCase() || deriveVariant(b.boss_id) || "").toUpperCase();
-    const oa = order[la] || 99;
-    const ob = order[lb] || 99;
-    if (oa !== ob) return oa - ob;
-    // main -> minion の順
-    const ma = isMinionRow(a) ? 1 : 0;
-    const mb = isMinionRow(b) ? 1 : 0;
-    if (ma !== mb) return ma - mb;
-    return (a.name||"").localeCompare(b.name||"", "ja");
-  }
-  function renderTabbar(items, activeId){
-    if (!items || items.length <= 1) return "";
-    const sorted = items.slice().sort(sortTabItems);
-    let minionIndex = 0;
-    return `<div class="tabbar">${sorted.map(it=>{
-      const bid = (it.boss_id||"").toString().trim();
-      const name = (it.name||bid||"").toString();
-      const v = ((it.variant||"").toString().trim().toUpperCase() || deriveVariant(bid) || "").toUpperCase();
-      const isMin = isMinionRow(it);
-      const label = v || (isMin ? `雑${++minionIndex}` : "?");
-      const active = bid === activeId ? "active" : "";
-      return `<a class="tabbtn ${active}" href="./boss.html?id=${encodeURIComponent(bid)}" title="${escapeHTML(name)}"><span class="t">${escapeHTML(label)}</span><span class="n">${escapeHTML(name)}</span></a>`;
-    }).join("")}</div>`;
+  const V_ORDER = { "": 0, "A": 1, "B": 2, "C": 3, "D": 4 };
+
+  function groupBosses(rows){
+    const map = new Map();
+    for (const r of rows){
+      const id = trim(r.boss_id);
+      if (!id) continue;
+      const { base, variant } = splitVariantId(id);
+      const item = { ...r, boss_id:id, _base:base, _variant:variant };
+      if (!map.has(base)) map.set(base, { base, items:[] });
+      map.get(base).items.push(item);
+    }
+    for (const g of map.values()){
+      g.items.sort((a,b)=>(V_ORDER[a._variant||""] - V_ORDER[b._variant||""]) || (trim(a.name).localeCompare(trim(b.name),"ja")));
+      g.main = g.items.find(x => x._variant === "A") || g.items.find(x => x._variant === "") || g.items[0];
+      // Aが無くて "" がある場合でも、タブ表示用にA扱いしたいケースがある
+      g.hasLetter = g.items.some(x => !!x._variant);
+    }
+    return map;
   }
 
   function groupBy(arr, key){
@@ -178,115 +155,171 @@
     return html;
   }
 
+  function makeRelated(mainBosses, currentGroupBase, loc){
+    const others = mainBosses.filter(b => b._base !== currentGroupBase);
+    let cand = others;
+    if (loc){
+      const same = others.filter(b => trim(b.location) === loc);
+      if (same.length) cand = same.concat(others.filter(b => trim(b.location) !== loc));
+    }
+    return cand.slice(0,3);
+  }
+
   async function main(){
-    if (!id){
+    if (!idParam){
       WRAP.innerHTML = `<div class="card"><h1>ボス詳細</h1><div class="warn">ボス一覧から選んでください。</div><p><a href="./bosses.html">← ボス一覧へ</a></p></div>`;
       return;
     }
 
-    const [bosses, resistTypes, bossResists] = await Promise.all([
+    const [bossRows, resistTypes, resistRows] = await Promise.all([
       loadCSV("./data/current/bosses.csv"),
       loadCSV("./data/current/resist_types.csv"),
       loadCSV("./data/current/boss_resists.csv")
     ]);
 
-    const boss = byId(bosses, "boss_id", id);
-    if (!boss){
-      WRAP.innerHTML = `<div class="card"><h1>ボス詳細</h1><div class="warn">id=${escapeHTML(id)} が見つかりません。</div><p><a href="./bosses.html">← ボス一覧へ</a></p></div>`;
+    const groups = groupBosses(bossRows);
+
+    // idParam が boss_id そのものか、グループ（base）かを判定
+    const exact = bossRows.find(r => trim(r.boss_id) === idParam);
+    const base = exact ? splitVariantId(idParam).base : idParam;
+    const group = groups.get(base);
+
+    if (!group){
+      WRAP.innerHTML = `<div class="card"><h1>ボス詳細</h1><div class="warn">id=${escapeHTML(idParam)} が見つかりません。</div><p><a href="./bosses.html">← ボス一覧へ</a></p></div>`;
       return;
     }
 
-    document.title = `${boss.name || boss.boss_id} | ボス詳細`;
+    const items = group.items;
+    const mainBoss = group.main;
 
-    // 同一戦闘グループ（A/B/C/D、随伴雑魚）をまとめる
-    const bossId = (boss.boss_id||"").toString().trim();
-    const groupId = (boss.group_id||"").toString().trim() || deriveGroupId(bossId);
-    const parentId = (boss.parent_boss_id || boss.parent_id || "").toString().trim();
+    // 関連ボスは「メイン（本ボス）」の location 基準
+    const mainBosses = Array.from(groups.values()).map(g=>g.main);
+    const loc = trim(mainBoss.location);
+    const related = makeRelated(mainBosses, base, loc);
+    const relatedHtml = related.length
+      ? related.map(b=>`<a class="chip" href="./boss.html?id=${encodeURIComponent(b._base)}">${escapeHTML(b.name||b.boss_id||"")}</a>`).join(" ")
+      : NA;
 
-    const groupRows = bosses
-      .map(r=>({
-        ...r,
-        boss_id: (r.boss_id||"").toString().trim(),
-        group_id: (r.group_id||"").toString().trim() || deriveGroupId((r.boss_id||"").toString().trim()),
-        variant: (r.variant||"").toString().trim().toUpperCase() || deriveVariant((r.boss_id||"").toString().trim()),
-      }))
-      .filter(r => r.boss_id && r.group_id === groupId);
+    // 同時出現（本ボス以外）を表示（一覧には出さないが詳細で紐づけ）
+    const subs = items.filter(x => x.boss_id !== mainBoss.boss_id);
+    const subsHtml = subs.length
+      ? subs.map(s=>{
+          const labelVar = s._variant ? `${s._variant}` : "sub";
+          const labelName = escapeHTML(s.name || s.boss_id);
+          return `<button class="tabbtn" data-bossid="${escapeHTML(s.boss_id)}" title="同時出現">${labelVar}: ${labelName}</button>`;
+        }).join("")
+      : "";
 
-    const nonMin = groupRows.filter(r=>!isMinionRow(r));
-    const mainBoss = pickMain(nonMin) || boss;
-    const nonMinIds = new Set(nonMin.map(r=>r.boss_id));
-    const minions = groupRows.filter(r=>isMinionRow(r)).filter(r=>{
-      const p = (r.parent_boss_id || r.parent_id || "").toString().trim();
-      return p && nonMinIds.has(p);
-    });
+    // タブ
+    const tabs = items.length > 1 ? items.map(it=>{
+      // "" でもグループ内にA/Bがある場合は A 表示
+      const v = it._variant || (group.hasLetter ? "A" : "");
+      const label = v ? `${v}` : "単体";
+      const tname = escapeHTML(it.name || it.boss_id);
+      return `<button class="tabbtn" data-bossid="${escapeHTML(it.boss_id)}">${label}: ${tname}</button>`;
+    }).join("") : "";
 
-    // タブは「同一グループの全員（本ボス+同一戦闘の雑魚）」を並べる
-    const tabItems = [...nonMin, ...minions];
-    const tabbarHtml = renderTabbar(tabItems, bossId);
+    WRAP.innerHTML = `
+      <section class="card" id="leftCard">
+        <div id="tabsWrap" style="${items.length > 1 ? "" : "display:none;"}">
+          <div class="tabs" id="tabs">${tabs}</div>
+          <div class="small">※同一戦闘内の A/B/C/D を切り替えできます（雑魚は一覧に出さず、ここで紐づけ表示）。</div>
+        </div>
 
-    // 現在の表示に紐づく随伴（本ボスなら自分の随伴 / 雑魚なら親の随伴）
-    const attachParent = parentId || bossId;
-    const attachedMinions = minions.filter(r=>{
-      const p = (r.parent_boss_id || r.parent_id || "").toString().trim();
-      return p === attachParent;
-    });
-    const addsHtml = attachedMinions.length ? attachedMinions.map(r=>{
-      const bid = (r.boss_id||"").toString().trim();
-      const v = (r.variant||deriveVariant(bid)||"").toUpperCase();
-      const label = v || "雑";
-      return `<a class="chip" href="./boss.html?id=${encodeURIComponent(bid)}">${escapeHTML(label)}：${escapeHTML(r.name||bid||"")}</a>`;
-    }).join(' ') : "";
-
-    const resists = bossResists.filter(r => (r.boss_id || "") === id);
-
-    const loc = (boss.location||"").toString().trim();
-    const others = bosses.filter(b => (b.boss_id||"").toString().trim() && (b.boss_id||"").toString().trim() !== id);
-    let cand = others;
-    if (loc){
-      const same = others.filter(b => (b.location||"").toString().trim() === loc);
-      if (same.length) cand = same.concat(others.filter(b => (b.location||"").toString().trim() !== loc));
-    }
-    const related = cand.slice(0,3);
-    const relatedHtml = related.length ? related.map(b=>`<a class="chip" href="./boss.html?id=${encodeURIComponent((b.boss_id||"").toString().trim())}">${escapeHTML(b.name||b.boss_id||"")}<\/a>`).join(' ') : NA;
-
-    const left = `
-      <section class="card">
-        ${tabbarHtml || ""}
-        <h1>${escapeHTML(boss.name || "")}</h1>
-        <div class="small mono">${escapeHTML(boss.boss_id || "")}</div>
+        <h1 id="bossName"></h1>
+        <div class="small mono" id="bossId"></div>
 
         <p>
-          <b>場所：</b>${disp(boss.location)}<br>
-          <b>フェーズ：</b>${disp(boss.phase_count)}
+          <b>場所：</b><span id="bossLoc"></span><br>
+          <b>フェーズ：</b><span id="bossPhase"></span>
         </p>
 
         <p><b>ステータス</b><br>
-          HP：${disp(boss.hp)}　
-          攻撃：${disp(boss.atk)}　
-          防御：${disp(boss.def)}　
-          素早さ：${disp(boss.agi)}
+          HP：<span id="bossHP"></span>　
+          攻撃：<span id="bossATK"></span>　
+          防御：<span id="bossDEF"></span>　
+          素早さ：<span id="bossAGI"></span>
         </p>
 
         <p>
-          <a class="btn" href="./damage.html?boss=${encodeURIComponent(boss.boss_id || "")}">このボスでダメージ計算</a>
+          <a class="btn" id="dmgLink" href="#">このボスでダメージ計算</a>
+        </p>
+
+        <p><b>同時出現</b><br>
+          <span id="bossSubs"></span>
         </p>
 
         <p><b>関連ボス</b><br>${relatedHtml}</p>
 
-        ${addsHtml ? `<p><b>同時出現（雑魚）</b><br>${addsHtml}</p>` : ""}
-
-        <p><b>行動ざっくり</b><br>${disp(boss.actions_summary)}</p>
-        <p><b>ドロップ</b><br>${disp(boss.drop_items)}</p>
-        <p><b>経験値/ゴールド</b><br>${disp(boss.exp)} / ${disp(boss.gold)}</p>
-        <p><b>メモ</b><br>${disp(boss.notes)}</p>
+        <p><b>行動ざっくり</b><br><span id="bossActs"></span></p>
+        <p><b>ドロップ</b><br><span id="bossDrop"></span></p>
+        <p><b>経験値/ゴールド</b><br><span id="bossEG"></span></p>
+        <p><b>メモ</b><br><span id="bossNotes"></span></p>
 
         <p class="small"><a href="./bosses.html">← ボス一覧へ戻る</a></p>
       </section>
+
+      <section class="grid" id="rightCard"></section>
     `;
 
-    const right = `<section class="grid">${renderResists(resistTypes, resists)}</section>`;
+    const el = (id)=>document.getElementById(id);
 
-    WRAP.innerHTML = left + right;
+    const resistsByBossId = groupBy(resistRows, "boss_id");
+
+    function setActive(bossId){
+      const btns = document.querySelectorAll("#tabs .tabbtn");
+      btns.forEach(b=>b.classList.toggle("active", b.dataset.bossid === bossId));
+    }
+
+    function update(bossId){
+      const b = items.find(x => x.boss_id === bossId) || mainBoss;
+      document.title = `${b.name || b.boss_id} | ボス詳細`;
+
+      el("bossName").innerHTML = escapeHTML(b.name || "");
+      el("bossId").innerHTML = escapeHTML(b.boss_id || "");
+      el("bossLoc").innerHTML = disp(b.location);
+      el("bossPhase").innerHTML = disp(b.phase_count);
+      el("bossHP").innerHTML = disp(b.hp);
+      el("bossATK").innerHTML = disp(b.atk);
+      el("bossDEF").innerHTML = disp(b.def);
+      el("bossAGI").innerHTML = disp(b.agi);
+      el("bossActs").innerHTML = disp(b.actions_summary);
+      el("bossDrop").innerHTML = disp(b.drop_items);
+      el("bossEG").innerHTML = `${disp(b.exp)} / ${disp(b.gold)}`;
+      el("bossNotes").innerHTML = disp(b.notes);
+
+      el("dmgLink").href = `./damage.html?boss=${encodeURIComponent(b.boss_id || "")}`;
+
+      // 同時出現の表示：本ボス以外をチップに（タブがある場合はタブで切替可）
+      const other = items.filter(x => x.boss_id !== b.boss_id);
+      el("bossSubs").innerHTML = other.length
+        ? other.map(o=>{
+            const v = o._variant || (group.hasLetter ? "A" : "");
+            const lab = v ? `${v}` : "sub";
+            const nm = escapeHTML(o.name || o.boss_id);
+            return `<a class="chip" href="./boss.html?id=${encodeURIComponent(o.boss_id)}" style="margin-right:6px;">${lab}: ${nm}</a>`;
+          }).join("")
+        : `<span class="muted">—</span>`;
+
+      const rs = resistsByBossId.get(b.boss_id) || [];
+      el("rightCard").innerHTML = renderResists(resistTypes, rs);
+
+      setActive(b.boss_id);
+    }
+
+    if (items.length > 1){
+      document.getElementById("tabs").addEventListener("click", (ev)=>{
+        const t = ev.target.closest(".tabbtn");
+        if (!t) return;
+        const bid = t.dataset.bossid;
+        if (!bid) return;
+        update(bid);
+      });
+    }
+
+    // 初期選択：URLが variant id を指していればそれを優先
+    const initial = exact ? trim(exact.boss_id) : trim(mainBoss.boss_id);
+    update(initial);
   }
 
   main().catch(err=>{
