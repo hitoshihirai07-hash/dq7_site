@@ -11,6 +11,16 @@
   <link rel="manifest" href="./manifest.webmanifest" />
   <meta name="theme-color" content="#e8892f" />
   <meta name="description" content="DQ7R のボス一覧。検索・絞り込み対応。" />
+
+  <style>
+    .boss-cell{display:flex;flex-direction:column;gap:6px;}
+    .boss-sub{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+    .tabbar{display:flex;flex-wrap:wrap;gap:6px;}
+    .tabbtn{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:1px solid rgba(0,0,0,.14);text-decoration:none;line-height:1.2;}
+    .tabbtn.active{background:rgba(232,137,47,.14);border-color:rgba(232,137,47,.55);}
+    .tabbtn .t{font-weight:700;}
+    .tabbtn .n{font-size:12px;opacity:.8;}
+  </style>
 </head>
 <body>
 <main>
@@ -50,15 +60,70 @@
   const Q = qs("#q");
   const OUT = qs("#out");
 
+  function norm(s){ return (s||"").toString().toLowerCase(); }
+
+  function deriveGroupId(id){
+    const s = (id||"").toString().trim();
+    if (!s) return "";
+    // boss_001_A / boss_001A / boss-001-A などを想定
+    return s.replace(/([_\-])?[A-D]$/i, "");
+  }
+  function deriveVariant(id){
+    const s = (id||"").toString().trim();
+    const m = s.match(/([A-D])$/i);
+    return m ? m[1].toUpperCase() : "";
+  }
+  function isMinionRow(r){
+    const p = (r.parent_boss_id || r.parent_id || "").toString().trim();
+    if (p) return true;
+    const f = (r.is_minion || "").toString().trim().toLowerCase();
+    return (f === "1" || f === "true" || f === "yes" || f === "y");
+  }
+
+  function pickMain(rows){
+    // 優先: is_main -> variant=A -> boss_id==group_id -> 先頭
+    const byFlag = rows.find(r => (r.is_main||"").toString().trim().toLowerCase() === "1" || (r.is_main||"").toString().trim().toLowerCase()==="true");
+    if (byFlag) return byFlag;
+    const byA = rows.find(r => (r.variant || deriveVariant(r.boss_id)) === "A");
+    if (byA) return byA;
+    const g = (rows[0].group_id || deriveGroupId(rows[0].boss_id)).toString().trim();
+    const byEq = rows.find(r => (r.boss_id||"").toString().trim() === g);
+    if (byEq) return byEq;
+    return rows[0];
+  }
+
+  function sortByVariant(a,b){
+    const la = (a.variant || deriveVariant(a.boss_id) || "").toUpperCase();
+    const lb = (b.variant || deriveVariant(b.boss_id) || "").toUpperCase();
+    const order = {A:1,B:2,C:3,D:4};
+    const oa = order[la] || 99;
+    const ob = order[lb] || 99;
+    if (oa !== ob) return oa - ob;
+    return (a.name||"").localeCompare(b.name||"", "ja");
+  }
+
+  function renderTabs(list, activeId){
+    if (!list || list.length <= 1) return "";
+    const items = list.slice().sort(sortByVariant);
+    return `<div class="tabbar">${items.map(it=>{
+      const id = (it.boss_id||"").toString().trim();
+      const v = (it.variant || deriveVariant(id) || "").toUpperCase();
+      const label = v || "?";
+      const name = (it.name||id||"").toString();
+      const active = id === activeId ? "active" : "";
+      return `<a class="tabbtn ${active}" href="./boss.html?id=${encodeURIComponent(id)}" title="${escapeHTML(name)}"><span class="t">${escapeHTML(label)}</span><span class="n">${escapeHTML(name)}</span></a>`;
+    }).join("")}</div>`;
+  }
+
   const cols = [
     {
       key:"name",
       label:"名前",
       render:(r)=>{
-        const id = (r.boss_id || "").trim();
+        const id = (r.main_id || "").trim();
         const name = escapeHTML(r.name || "");
-        const idHtml = escapeHTML(r.boss_id || "");
-        return `<a href="./boss.html?id=${encodeURIComponent(id)}">${name}</a>`;
+        const tabs = r.tabs_html || "";
+        return `<div class="boss-cell"><a href="./boss.html?id=${encodeURIComponent(id)}">${name}</a>${tabs ? `<div class="boss-sub">${tabs}</div>` : ""}</div>`;
       }
     },
     { key:"location", label:"場所" },
@@ -66,20 +131,56 @@
     { key:"notes", label:"メモ" }
   ];
 
-  function norm(s){ return (s||"").toLowerCase(); }
-
   async function render(){
-    const rows = await loadCSV("./data/current/bosses.csv");
+    const raw = await loadCSV("./data/current/bosses.csv");
     const q = norm(Q.value.trim());
 
-    const filtered = rows.filter(r=>{
-      if (!q) return true;
-      const blob = [r.boss_id,r.name,r.location,r.actions_summary,r.notes].join(" ").toLowerCase();
-      return blob.includes(q);
-    });
+    // グルーピング（minion は一覧から除外。ただし検索対象には含める）
+    const rows = raw.map(r=>{
+      const boss_id = (r.boss_id||"").toString().trim();
+      const group_id = (r.group_id||"").toString().trim() || deriveGroupId(boss_id);
+      const variant = (r.variant||"").toString().trim().toUpperCase() || deriveVariant(boss_id);
+      const parent = (r.parent_boss_id || r.parent_id || "").toString().trim();
+      const is_minion = isMinionRow(r);
+      return { ...r, boss_id, group_id, variant, parent, is_minion };
+    }).filter(r => r.boss_id);
 
-    OUT.innerHTML = makeTable(filtered, cols) +
-      `<div class="small" style="margin-top:8px;">件数: ${filtered.length}</div>`;
+    const groups = new Map();
+    for (const r of rows){
+      const g = (r.group_id||"").toString().trim();
+      if (!g) continue;
+      if (!groups.has(g)) groups.set(g, []);
+      groups.get(g).push(r);
+    }
+
+    const outRows = [];
+    for (const [g, list] of groups.entries()){
+      const nonMin = list.filter(x=>!x.is_minion);
+      if (!nonMin.length) continue;
+      const main = pickMain(nonMin);
+      const tabs = renderTabs(nonMin, main.boss_id);
+      const searchBlob = norm([
+        ...list.map(x=>[x.boss_id,x.name,x.location,x.actions_summary,x.notes].join(" ")),
+      ].join(" "));
+      if (q && !searchBlob.includes(q)) continue;
+
+      outRows.push({
+        main_id: main.boss_id,
+        name: main.name || main.boss_id,
+        location: main.location || "",
+        actions_summary: main.actions_summary || "",
+        notes: main.notes || "",
+        tabs_html: tabs
+      });
+    }
+
+    outRows.sort((a,b)=>
+      (a.location||"").localeCompare(b.location||"","ja") ||
+      (a.name||"").localeCompare(b.name||"","ja")
+    );
+
+    OUT.innerHTML = makeTable(outRows, cols) +
+      `<div class="small" style="margin-top:8px;">件数: ${outRows.length}</div>`;
   }
 
   Q.addEventListener("input", render);

@@ -11,6 +11,14 @@
   <link rel="manifest" href="./manifest.webmanifest" />
   <meta name="theme-color" content="#e8892f" />
   <meta name="description" content="DQ7R のボス詳細ページ。" />
+
+  <style>
+    .tabbar{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 10px;}
+    .tabbtn{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:1px solid rgba(0,0,0,.14);text-decoration:none;line-height:1.2;}
+    .tabbtn.active{background:rgba(232,137,47,.14);border-color:rgba(232,137,47,.55);}
+    .tabbtn .t{font-weight:700;}
+    .tabbtn .n{font-size:12px;opacity:.85;}
+  </style>
 </head>
 <body>
 <main>
@@ -56,6 +64,63 @@
     immune: "無効",
     absorb: "吸収"
   };
+
+  // ===== グルーピング（A/B/C/D, 雑魚の紐づけ） =====
+  function deriveGroupId(id){
+    const s = (id||"").toString().trim();
+    if (!s) return "";
+    // boss_001_A / boss_001A / boss-001-A などを想定
+    return s.replace(/([_\-])?[A-D]$/i, "");
+  }
+  function deriveVariant(id){
+    const s = (id||"").toString().trim();
+    const m = s.match(/([A-D])$/i);
+    return m ? m[1].toUpperCase() : "";
+  }
+  function isMinionRow(r){
+    const p = (r.parent_boss_id || r.parent_id || "").toString().trim();
+    if (p) return true;
+    const f = (r.is_minion || "").toString().trim().toLowerCase();
+    return (f === "1" || f === "true" || f === "yes" || f === "y");
+  }
+  function pickMain(rows){
+    if (!rows || !rows.length) return null;
+    const byFlag = rows.find(r => (r.is_main||"").toString().trim().toLowerCase() === "1" || (r.is_main||"").toString().trim().toLowerCase()==="true");
+    if (byFlag) return byFlag;
+    const byA = rows.find(r => ((r.variant||"").toString().trim().toUpperCase() || deriveVariant(r.boss_id)) === "A");
+    if (byA) return byA;
+    const g = (rows[0].group_id || deriveGroupId(rows[0].boss_id)).toString().trim();
+    const byEq = rows.find(r => (r.boss_id||"").toString().trim() === g);
+    if (byEq) return byEq;
+    return rows[0];
+  }
+  function sortTabItems(a,b){
+    const order = {A:1,B:2,C:3,D:4};
+    const la = ((a.variant||"").toString().trim().toUpperCase() || deriveVariant(a.boss_id) || "").toUpperCase();
+    const lb = ((b.variant||"").toString().trim().toUpperCase() || deriveVariant(b.boss_id) || "").toUpperCase();
+    const oa = order[la] || 99;
+    const ob = order[lb] || 99;
+    if (oa !== ob) return oa - ob;
+    // main -> minion の順
+    const ma = isMinionRow(a) ? 1 : 0;
+    const mb = isMinionRow(b) ? 1 : 0;
+    if (ma !== mb) return ma - mb;
+    return (a.name||"").localeCompare(b.name||"", "ja");
+  }
+  function renderTabbar(items, activeId){
+    if (!items || items.length <= 1) return "";
+    const sorted = items.slice().sort(sortTabItems);
+    let minionIndex = 0;
+    return `<div class="tabbar">${sorted.map(it=>{
+      const bid = (it.boss_id||"").toString().trim();
+      const name = (it.name||bid||"").toString();
+      const v = ((it.variant||"").toString().trim().toUpperCase() || deriveVariant(bid) || "").toUpperCase();
+      const isMin = isMinionRow(it);
+      const label = v || (isMin ? `雑${++minionIndex}` : "?");
+      const active = bid === activeId ? "active" : "";
+      return `<a class="tabbtn ${active}" href="./boss.html?id=${encodeURIComponent(bid)}" title="${escapeHTML(name)}"><span class="t">${escapeHTML(label)}</span><span class="n">${escapeHTML(name)}</span></a>`;
+    }).join("")}</div>`;
+  }
 
   function groupBy(arr, key){
     const m = new Map();
@@ -133,6 +198,45 @@
 
     document.title = `${boss.name || boss.boss_id} | ボス詳細`;
 
+    // 同一戦闘グループ（A/B/C/D、随伴雑魚）をまとめる
+    const bossId = (boss.boss_id||"").toString().trim();
+    const groupId = (boss.group_id||"").toString().trim() || deriveGroupId(bossId);
+    const parentId = (boss.parent_boss_id || boss.parent_id || "").toString().trim();
+
+    const groupRows = bosses
+      .map(r=>({
+        ...r,
+        boss_id: (r.boss_id||"").toString().trim(),
+        group_id: (r.group_id||"").toString().trim() || deriveGroupId((r.boss_id||"").toString().trim()),
+        variant: (r.variant||"").toString().trim().toUpperCase() || deriveVariant((r.boss_id||"").toString().trim()),
+      }))
+      .filter(r => r.boss_id && r.group_id === groupId);
+
+    const nonMin = groupRows.filter(r=>!isMinionRow(r));
+    const mainBoss = pickMain(nonMin) || boss;
+    const nonMinIds = new Set(nonMin.map(r=>r.boss_id));
+    const minions = groupRows.filter(r=>isMinionRow(r)).filter(r=>{
+      const p = (r.parent_boss_id || r.parent_id || "").toString().trim();
+      return p && nonMinIds.has(p);
+    });
+
+    // タブは「同一グループの全員（本ボス+同一戦闘の雑魚）」を並べる
+    const tabItems = [...nonMin, ...minions];
+    const tabbarHtml = renderTabbar(tabItems, bossId);
+
+    // 現在の表示に紐づく随伴（本ボスなら自分の随伴 / 雑魚なら親の随伴）
+    const attachParent = parentId || bossId;
+    const attachedMinions = minions.filter(r=>{
+      const p = (r.parent_boss_id || r.parent_id || "").toString().trim();
+      return p === attachParent;
+    });
+    const addsHtml = attachedMinions.length ? attachedMinions.map(r=>{
+      const bid = (r.boss_id||"").toString().trim();
+      const v = (r.variant||deriveVariant(bid)||"").toUpperCase();
+      const label = v || "雑";
+      return `<a class="chip" href="./boss.html?id=${encodeURIComponent(bid)}">${escapeHTML(label)}：${escapeHTML(r.name||bid||"")}</a>`;
+    }).join(' ') : "";
+
     const resists = bossResists.filter(r => (r.boss_id || "") === id);
 
     const loc = (boss.location||"").toString().trim();
@@ -147,6 +251,7 @@
 
     const left = `
       <section class="card">
+        ${tabbarHtml || ""}
         <h1>${escapeHTML(boss.name || "")}</h1>
         <div class="small mono">${escapeHTML(boss.boss_id || "")}</div>
 
@@ -167,6 +272,8 @@
         </p>
 
         <p><b>関連ボス</b><br>${relatedHtml}</p>
+
+        ${addsHtml ? `<p><b>同時出現（雑魚）</b><br>${addsHtml}</p>` : ""}
 
         <p><b>行動ざっくり</b><br>${disp(boss.actions_summary)}</p>
         <p><b>ドロップ</b><br>${disp(boss.drop_items)}</p>
