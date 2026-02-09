@@ -69,6 +69,9 @@
       {key:"No", label:"#", right:true},
       {key:"name", label:"強モンスター"},
       {key:"location", label:"出現場所"},
+      {key:"hp", label:"HP", right:true},
+      {key:"atk", label:"攻撃", right:true},
+      {key:"def", label:"防御", right:true},
       {key:"drop", label:"ドロップ"},
     ];
     const thead = `<thead><tr>${cols.map(c=>`<th class="${c.right?'num':''}">${escapeHTML(c.label)}</th>`).join("")}</tr></thead>`;
@@ -77,6 +80,9 @@
         <td class="num">${escapeHTML(String(r.No ?? ""))}</td>
         <td>${escapeHTML(r.name ?? "")}</td>
         <td>${escapeHTML(r.location ?? "")}</td>
+        <td class="num">${escapeHTML((r.hp ?? "").toString().trim() || "—")}</td>
+        <td class="num">${escapeHTML((r.atk ?? "").toString().trim() || "—")}</td>
+        <td class="num">${escapeHTML((r.def ?? "").toString().trim() || "—")}</td>
         <td>${escapeHTML(r.drop ?? "")}</td>
       </tr>`;
     }).join("")}</tbody>`;
@@ -89,9 +95,12 @@
       No: Number(r["No"] ?? r["NO"] ?? r["no"] ?? r["番号"] ?? r["No."] ?? r["No "] ?? r["No"] ?? 0),
       name: (r["強モンスター"] ?? r["モンスター"] ?? r["name"] ?? "").toString().trim(),
       location: (r["出現場所"] ?? r["場所"] ?? r["location"] ?? "").toString().trim(),
+      hp: (r["HP"] ?? r["hp"] ?? "").toString().trim(),
+      atk: (r["攻撃"] ?? r["atk"] ?? "").toString().trim(),
+      def: (r["防御"] ?? r["def"] ?? "").toString().trim(),
       drop: (r["ドロップ"] ?? r["drop"] ?? "").toString().trim(),
       _blob: ""
-    })).map(r => ({...r, era: detectEra(r.location), _blob: norm([r.name,r.location,r.drop].join(" "))}))
+    })).map(r => ({...r, era: detectEra(r.location), _blob: norm([r.name,r.location,r.hp,r.atk,r.def,r.drop].join(" "))}))
       .sort((a,b)=> (a.No||0) - (b.No||0));
 
     const eras = Array.from(new Set(rows.map(r=>r.era))).sort((a,b)=>a.localeCompare(b,"ja"));

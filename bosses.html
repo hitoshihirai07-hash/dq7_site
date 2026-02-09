@@ -53,8 +53,8 @@
   function norm(s){ return (s||"").toString().toLowerCase(); }
   function trim(s){ return (s||"").toString().trim(); }
 
-  // boss_id 末尾の A/B/C/D をグルーピング用に分解
-  // 例: boss_120_A / boss_120A / boss-120-B などを想定
+  // boss_id 末尾の A/B/C/D を分解（表示はグループ単位）
+  // 例: boss_120_A / boss_120A / boss-120-B など
   function splitVariantId(bossId){
     const s = trim(bossId);
     const m = s.match(/^(.*?)(?:[_-])?([A-D])$/i);
@@ -62,64 +62,66 @@
     return { base: m[1], variant: m[2].toUpperCase() };
   }
 
-  const V_ORDER = { "": 0, "A": 1, "B": 2, "C": 3, "D": 4 };
-
-  // ★順番は「CSV（=boss_idの並び）」を絶対に崩さない
-  function groupBossesKeepOrder(rows){
-    const map = new Map(); // insertion order = first appearance order
+  // 重要：並び順は CSV（boss_id の並び）を絶対に崩さない
+  function buildGroups(rows){
+    const map = new Map();
+    const ordered = [];
+    let idx = 0;
 
     for (const r of rows){
       const id = trim(r.boss_id);
       if (!id) continue;
-
       const { base, variant } = splitVariantId(id);
-      const item = { ...r, boss_id:id, _base:base, _variant:variant };
 
-      if (!map.has(base)) map.set(base, { base, items:[] });
-      map.get(base).items.push(item);
+      if (!map.has(base)){
+        const g = { base, items:[] };
+        map.set(base, g);
+        ordered.push(g);
+      }
+
+      map.get(base).items.push({ ...r, boss_id:id, _base:base, _variant:variant, _idx: idx++ });
     }
 
-    const groups = [];
-    for (const g of map.values()){
-      // タブ順は A→B→C→D（ID順）
-      g.items.sort((a,b)=>(V_ORDER[a._variant||""] - V_ORDER[b._variant||""]) || (trim(a.boss_id).localeCompare(trim(b.boss_id), "ja")));
-      g.main = g.items.find(x => x._variant === "A") || g.items.find(x => x._variant === "") || g.items[0];
-
+    for (const g of ordered){
+      g.main = g.items[0];
       g.location = trim(g.main.location);
       g.name = trim(g.main.name);
       g.actions_summary = trim(g.main.actions_summary);
       g.notes = trim(g.main.notes);
-
-      // 検索はグループ内の全情報を拾う（B/C/Dの名前で検索してもAがヒット）
+      // 検索はグループ内の全情報を拾う（雑魚/形態名で検索しても本ボスが出る）
       g.searchBlob = norm(g.items.map(x=>[x.boss_id,x.name,x.location,x.actions_summary,x.notes].join(" ")).join(" "));
-      groups.push(g);
     }
 
-    return groups;
+    return ordered;
   }
 
-  function renderTable(groups){
+  function groupByLocation(groups){
+    const m = new Map();
+    for (const g of groups){
+      const loc = g.location || "（場所不明）";
+      if (!m.has(loc)) m.set(loc, []);
+      m.get(loc).push(g);
+    }
+    // Mapは挿入順＝CSV順になる
+    return Array.from(m.entries());
+  }
+
+  function renderLocationBlock(loc, groups){
     const rowsHtml = groups.map(g=>{
       const name = escapeHTML(g.name || g.base);
-      const loc = escapeHTML(g.location || "（場所不明）");
       const actions = escapeHTML(g.actions_summary || "");
       const notes = escapeHTML(g.notes || "");
       return `<tr>
         <td><a href="./boss.html?id=${encodeURIComponent(g.base)}">${name}</a></td>
-        <td>${loc}</td>
         <td>${actions || '<span class="muted">—</span>'}</td>
         <td>${notes || '<span class="muted">—</span>'}</td>
       </tr>`;
     }).join("");
 
     return `<section class="card" style="margin-top:12px;">
+      <h2 style="margin-top:0;">${escapeHTML(loc)}</h2>
       <div class="table-wrap"><table>
-        <thead><tr>
-          <th style="min-width:220px;">ボス</th>
-          <th style="min-width:160px;">場所</th>
-          <th>行動ざっくり</th>
-          <th>メモ</th>
-        </tr></thead>
+        <thead><tr><th style="min-width:220px;">ボス</th><th>行動ざっくり</th><th>メモ</th></tr></thead>
         <tbody>${rowsHtml}</tbody>
       </table></div>
     </section>`;
@@ -127,13 +129,17 @@
 
   async function render(){
     const rows = await loadCSV("./data/current/bosses.csv");
-    const groups = groupBossesKeepOrder(rows);
+    const groups = buildGroups(rows);
 
     const q = norm(Q.value.trim());
     const filtered = !q ? groups : groups.filter(g => g.searchBlob.includes(q));
 
-    const html = renderTable(filtered) + `<div class="small" style="margin-top:10px;">件数: ${filtered.length}</div>`;
-    OUT.innerHTML = filtered.length ? html : `<div class="warn">該当するボスが見つかりません。</div>`;
+    const byLoc = groupByLocation(filtered);
+
+    const html = byLoc.map(([loc, arr])=>renderLocationBlock(loc, arr)).join("") +
+      `<div class="small" style="margin-top:10px;">件数: ${filtered.length}</div>`;
+
+    OUT.innerHTML = html || `<div class="warn">該当するボスが見つかりません。</div>`;
   }
 
   Q.addEventListener("input", render);

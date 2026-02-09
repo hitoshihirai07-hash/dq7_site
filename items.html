@@ -56,7 +56,6 @@
   const COLS = [
     { key:"name", label:"名前" },
     { key:"category", label:"カテゴリ" },
-    { key:"slot", label:"部位/種別" },
     { key:"atk", label:"攻撃" },
     { key:"def", label:"防御" },
     { key:"damage_mul", label:"倍率" },
@@ -107,7 +106,7 @@
       const filtered = items.filter(r=>{
         if (cat !== "all" && (r.category||"").trim() !== cat) return false;
         if (!q) return true;
-        const blob = [r.name,r.effect,r.notes,r.category,r.slot,r.era,r.obtain].join(" ").toLowerCase();
+        const blob = [r.name,r.effect,r.notes,r.category,r.era,r.obtain].join(" ").toLowerCase();
         return blob.includes(q);
       });
 

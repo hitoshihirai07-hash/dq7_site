@@ -78,8 +78,6 @@
     if (!m) return { base:s, variant:"" };
     return { base: m[1], variant: m[2].toUpperCase() };
   }
-  const V_ORDER = { "": 0, "A": 1, "B": 2, "C": 3, "D": 4 };
-
   function groupBosses(rows){
     const map = new Map();
     for (const r of rows){
@@ -91,9 +89,8 @@
       map.get(base).items.push(item);
     }
     for (const g of map.values()){
-      g.items.sort((a,b)=>((V_ORDER[a._variant||""] - V_ORDER[b._variant||""]) || (trim(a.boss_id).localeCompare(trim(b.boss_id),"ja"))));
-      g.main = g.items.find(x => x._variant === "A") || g.items.find(x => x._variant === "") || g.items[0];
-      // Aが無くて "" がある場合でも、タブ表示用にA扱いしたいケースがある
+      // 重要：並び順は CSV（boss_id の並び）を絶対に崩さない
+      g.main = g.items[0];
       g.hasLetter = g.items.some(x => !!x._variant);
     }
     return map;
@@ -200,13 +197,13 @@
       ? related.map(b=>`<a class="chip" href="./boss.html?id=${encodeURIComponent(b._base)}">${escapeHTML(b.name||b.boss_id||"")}</a>`).join(" ")
       : NA;
 
-    // 同時出現（本ボス以外）を表示（一覧には出さないが詳細で紐づけ）
+    // 同一戦闘（本ボス以外）を表示（一覧には出さないが詳細で紐づけ）
     const subs = items.filter(x => x.boss_id !== mainBoss.boss_id);
     const subsHtml = subs.length
       ? subs.map(s=>{
           const labelVar = s._variant ? `${s._variant}` : "sub";
           const labelName = escapeHTML(s.name || s.boss_id);
-          return `<button class="tabbtn" data-bossid="${escapeHTML(s.boss_id)}" title="同時出現">${labelVar}: ${labelName}</button>`;
+          return `<button class="tabbtn" data-bossid="${escapeHTML(s.boss_id)}" title="同一戦闘">${labelVar}: ${labelName}</button>`;
         }).join("")
       : "";
 
@@ -223,7 +220,6 @@
       <section class="card" id="leftCard">
         <div id="tabsWrap" style="${items.length > 1 ? "" : "display:none;"}">
           <div class="tabs" id="tabs">${tabs}</div>
-          <div class="small">※同一戦闘内の A/B/C/D を切り替えできます（雑魚は一覧に出さず、ここで紐づけ表示）。</div>
         </div>
 
         <h1 id="bossName"></h1>
@@ -245,7 +241,7 @@
           <a class="btn" id="dmgLink" href="#">このボスでダメージ計算</a>
         </p>
 
-        <p><b>同時出現</b><br>
+        <p><b>同一戦闘</b><br>
           <span id="bossSubs"></span>
         </p>
 
@@ -290,7 +286,7 @@
 
       el("dmgLink").href = `./damage.html?boss=${encodeURIComponent(b.boss_id || "")}`;
 
-      // 同時出現の表示：本ボス以外をチップに（タブがある場合はタブで切替可）
+      // 同一戦闘の表示：本ボス以外をチップに（タブがある場合はタブで切替可）
       const other = items.filter(x => x.boss_id !== b.boss_id);
       el("bossSubs").innerHTML = other.length
         ? other.map(o=>{

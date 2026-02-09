@@ -55,12 +55,27 @@
 
   const COLS = [
     { key:"name", label:"名称" },
+    { key:"mp", label:"MP" },
     { key:"element", label:"属性" },
     { key:"target", label:"対象" },
     { key:"power", label:"効果量" },
     { key:"hit", label:"回数/命中" },
     { key:"notes", label:"メモ" },
   ];
+
+  // MP は今後検証で列追加予定（現時点では回数/命中欄に入っていることがある）
+  function hasMP(r){
+    return ((r.mp ?? "").toString().trim()) !== "";
+  }
+  function getMP(r){
+    const mp = (r.mp ?? "").toString().trim();
+    if (mp) return mp;
+    return (r.hit ?? "").toString().trim();
+  }
+  function getHit(r){
+    if (!hasMP(r)) return "";
+    return (r.hit ?? "").toString().trim();
+  }
 
   function norm(s){ return (s||"").toLowerCase(); }
 
@@ -73,6 +88,8 @@
           const name = r.name || r.skill_id || "";
           return `<td><a href="./skill.html?id=${encodeURIComponent(id)}">${escapeHTML(name)}</a></td>`;
         }
+        if (c.key === "mp") return `<td class="num">${escapeHTML(getMP(r))}</td>`;
+        if (c.key === "hit") return `<td>${escapeHTML(getHit(r))}</td>`;
         return `<td>${escapeHTML(r[c.key] ?? "")}</td>`;
       }).join("")}</tr>`;
     }).join("")}</tbody>`;
