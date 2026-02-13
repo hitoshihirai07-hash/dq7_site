@@ -4,17 +4,28 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="./assets/style.css" />
-  <title>アイテム詳細</title>
+  <title>【DQ7R】アイテム詳細｜用途・入手メモ</title>
 
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./assets/icon-192.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <meta name="theme-color" content="#e8892f" />  <meta name="description" content="DQ7R のアイテム詳細ページ。" />
+  <meta name="theme-color" content="#e8892f" />  <meta name="description" content="DQ7Rのアイテム詳細。用途・入手メモ・カテゴリなどを確認できます。" />
 </head>
 <body>
 <main>
 <div class="card" style="margin-bottom:12px;"><h1 style="margin-bottom:6px;">アイテム詳細</h1><p>アイテム一覧から選んで開けます。</p></div>
   <div id="wrap"></div>
+<!-- seo-detail:start -->
+<div class="card">
+    <h2>アイテム詳細の見方</h2>
+    <p>このページでは、アイテムの用途・入手メモなどを確認できます。取り逃しが不安な語があれば、取り逃しQ&Aでも同じ語で検索できます。</p>
+    <div class="toolbar" style="gap:8px; flex-wrap:wrap; align-items:center;">
+      <a class="btn" href="./items.html">アイテム一覧</a>
+      <a class="btn" href="./missables.html">取り逃しQ&A</a>
+      <a class="btn" href="./lucky_panel.html">ラッキーパネル</a>
+    </div>
+  </div>
+<!-- seo-detail:end -->
 </main>
 
 <footer>
@@ -64,6 +75,11 @@
     }
 
     document.title = `${it.name || it.item_id} | アイテム詳細`;
+    // meta description (for SERP snippet)
+    const nm = (it.name || it.item_id || "").toString();
+    const md = document.querySelector('meta[name="description"]');
+    if (md) md.setAttribute('content', `DQ7Rのアイテム「${nm}」の詳細。用途・入手メモなどを確認。`);
+
 
     const cat = (it.category||"").toString().trim();
     const others = items.filter(x => (x.item_id||"").toString().trim() && (x.item_id||"").toString().trim() !== id);

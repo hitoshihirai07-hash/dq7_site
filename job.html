@@ -4,18 +4,30 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="./assets/style.css" />
-  <title>職業詳細</title>
+  <title>【DQ7R】職業詳細｜条件・習得</title>
 
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./assets/icon-192.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <meta name="theme-color" content="#e8892f" />
-  <meta name="description" content="DQ7R の職業詳細ページ。" />
+  <meta name="description" content="DQ7Rの職業詳細。条件・習得（呪文/特技）などを確認できます。" />
 </head>
 <body>
 <main>
 <div class="card" style="margin-bottom:12px;"><h1 style="margin-bottom:6px;">職業詳細</h1><p>職業一覧から選んで開けます。</p></div>
   <div id="wrap" class="grid two"></div>
+<!-- seo-detail:start -->
+<div class="card">
+    <h2>職業詳細の見方</h2>
+    <p>このページでは、職業の条件や習得（呪文・特技）を確認できます。欲しい習得から逆算するなら、呪文・特技一覧もあわせて見ると早いです。</p>
+    <div class="toolbar" style="gap:8px; flex-wrap:wrap; align-items:center;">
+      <a class="btn" href="./jobs.html">職業一覧</a>
+      <a class="btn" href="./spells.html">呪文</a>
+      <a class="btn" href="./skills.html">特技</a>
+      <a class="btn" href="./characters.html">キャラクター</a>
+    </div>
+  </div>
+<!-- seo-detail:end -->
 </main>
 
 <footer>
@@ -116,6 +128,11 @@
     }
 
     document.title = `${job.name || job.job_id} | 職業詳細`;
+    // meta description (for SERP snippet)
+    const nm = (job.name || job.job_id || "").toString();
+    const md = document.querySelector('meta[name="description"]');
+    if (md) md.setAttribute('content', `DQ7Rの職業「${nm}」の詳細。条件・習得（呪文/特技）を確認。`);
+
 
         const grp = (job.group||"").toString().trim();
     const others = jobs.filter(x => (x.job_id||"").toString().trim() && (x.job_id||"").toString().trim() !== id);

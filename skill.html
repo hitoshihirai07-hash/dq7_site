@@ -4,17 +4,29 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="./assets/style.css" />
-  <title>呪文・特技詳細</title>
+  <title>【DQ7R】呪文・特技詳細｜効果・属性</title>
 
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./assets/icon-192.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <meta name="theme-color" content="#e8892f" />  <meta name="description" content="DQ7R の特技詳細ページ。" />
+  <meta name="theme-color" content="#e8892f" />  <meta name="description" content="DQ7Rの呪文・特技詳細。効果・属性・倍率などを確認できます。" />
 </head>
 <body>
 <main>
 <div class="card" style="margin-bottom:12px;"><h1 style="margin-bottom:6px;">特技詳細</h1><p>呪文・特技一覧から選んで開けます。</p></div>
   <div id="wrap" class="grid two"></div>
+<!-- seo-detail:start -->
+<div class="card">
+    <h2>呪文・特技詳細の見方</h2>
+    <p>このページでは、効果や属性などを確認できます。ボスの耐性に合わせて選ぶ場合は、ボス一覧→詳細→このページ、の順に辿ると迷いにくいです。</p>
+    <div class="toolbar" style="gap:8px; flex-wrap:wrap; align-items:center;">
+      <a class="btn" href="./skills.html">呪文・特技一覧</a>
+      <a class="btn" href="./bosses.html">ボス</a>
+      <a class="btn" href="./jobs.html">職業</a>
+      <a class="btn" href="./damage.html">ダメージ計算</a>
+    </div>
+  </div>
+<!-- seo-detail:end -->
 </main>
 
 <footer>
@@ -76,6 +88,11 @@
     }
 
     document.title = `${s.name || s.skill_id} | 呪文・特技詳細`;
+    // meta description (for SERP snippet)
+    const nm = (s.name || s.skill_id || "").toString();
+    const md = document.querySelector('meta[name="description"]');
+    if (md) md.setAttribute('content', `DQ7Rの呪文・特技「${nm}」の詳細。効果・属性・倍率などを確認。`);
+
 
     const jobById = new Map(jobs.map(j=>[j.job_id, j]));
 

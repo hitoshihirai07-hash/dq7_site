@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="./assets/style.css" />
-  <title>強モンスター</title>
+  <title>【DQ7R】強モンスター｜弱点・耐性と対策</title>
 
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./assets/icon-192.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <meta name="theme-color" content="#e8892f" />
-  <meta name="description" content="DQ7R の強モンスター一覧。出現場所・ドロップを検索/絞り込みで確認。" />
+  <meta name="description" content="DQ7Rの強モンスター情報。弱点・耐性を確認し、必要ならダメージ計算で倒し切れるかを見積もる。" />
 </head>
 <body>
 <main>
@@ -28,6 +28,19 @@
 
     <div id="out"></div>
   </section>
+<!-- seo-block:start -->
+<div class="card">
+    <h2>強モンスターの確認を最短に</h2>
+    <p>強モンスターは対策の差が出やすい相手です。まずは弱点・耐性を確認し、必要ならダメージ計算で“倒し切れるか”を見積もるのが早いです。</p>
+    <h2>関連リンク</h2>
+    <div class="toolbar" style="gap:8px; flex-wrap:wrap; align-items:center;">
+      <a class="btn" href="./damage.html">ダメージ計算</a>
+      <a class="btn" href="./skills.html">特技</a>
+      <a class="btn" href="./spells.html">呪文</a>
+      <a class="btn" href="./bosses.html">ボス</a>
+    </div>
+  </div>
+<!-- seo-block:end -->
 </main>
 
 <footer>
@@ -49,7 +62,7 @@
   import { loadCSV } from "./assets/data.js";
   import { qs, escapeHTML } from "./assets/util.js";
 
-  boot("強モンスター | DQ7R");
+  boot("【DQ7R】強モンスター｜弱点・耐性と対策");
 
   const Q = qs("#q");
   const ERA = qs("#era");

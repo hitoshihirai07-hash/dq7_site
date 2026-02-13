@@ -4,12 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="./assets/style.css" />
-  <title>ちいさなメダル</title>
+  <title>【DQ7R】ちいさなメダル｜交換・報酬の確認</title>
 
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./assets/icon-192.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <meta name="theme-color" content="#e8892f" />  <meta name="description" content="DQ7R のちいさなメダル関連メモ一覧。検索・絞り込み対応。" />
+  <meta name="theme-color" content="#e8892f" />  <meta name="description" content="DQ7Rのちいさなメダル関連を確認。交換・報酬や進捗を整理して、集めながら迷わない。" />
 <style>
     .tabs{display:flex; gap:8px; flex-wrap:wrap; margin:12px 0;}
     .tab{border:1px solid var(--line); background:var(--card); padding:8px 10px; border-radius:999px; cursor:pointer; font-size:14px;}
@@ -65,6 +65,18 @@
     <div id="prizeOut"></div>
   </div>
 </section>
+<!-- seo-block:start -->
+<div class="card">
+    <h2>ちいさなメダルを“集めながら管理”する</h2>
+    <p>ちいさなメダルの報酬や進捗を、確認しやすい形でまとめます。攻略中は「今どこまで交換したか」「次に必要な枚数」を押さえるだけでも迷いが減ります。</p>
+    <h2>関連リンク</h2>
+    <div class="toolbar" style="gap:8px; flex-wrap:wrap; align-items:center;">
+      <a class="btn" href="./missables.html">取り逃しQ&A</a>
+      <a class="btn" href="./items.html">アイテム</a>
+      <a class="btn" href="./bosses.html">ボス</a>
+    </div>
+  </div>
+<!-- seo-block:end -->
 </main>
 
 <footer>
@@ -87,7 +99,7 @@
   import { loadCSV } from "./assets/data.js";
   import { qs, escapeHTML } from "./assets/util.js";
 
-  boot("ちいさなメダル | DQ7R");
+  boot("【DQ7R】ちいさなメダル｜交換・報酬の確認");
 
   const STORAGE_KEY = "dq7_medals_checked_v1";
 

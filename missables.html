@@ -4,13 +4,14 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="./assets/style.css" />
-  <title>取り逃し厳禁まとめ（Q&A）</title>
+  <title>【DQ7R】取り逃し厳禁まとめ｜損しないQ&A</title>
 
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./assets/icon-192.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <meta name="theme-color" content="#e8892f" />
-  <meta name="description" content="DQ7R の取り逃し厳禁（取り返しがつかない要素）をQ&A形式でまとめます。" />
+  <meta name="description" content="DQ7Rの取り逃し厳禁（取り返しがつかない要素）をQ&A形式で整理。検索で“期間限定/分岐/景品/交換”を素早く確認。" />
+  <script type="application/ld+json" id="faq-jsonld"></script>
 </head>
 <body>
 <main>
@@ -25,6 +26,31 @@
 
     <div id="out" class="qa-list" style="margin-top:12px;"></div>
   </section>
+<!-- seo-block:start -->
+<section class="card">
+    <h2>まずやること（30秒）</h2>
+    <ul class="list">
+      <li><b>イベント前にセーブ</b>（分岐・期間限定の事故を防ぐ）</li>
+      <li><b>宝箱／交換／景品／一度きり会話</b>の4点だけ確認</li>
+      <li>迷った語は、このページの検索欄にそのまま入れる</li>
+    </ul>
+
+    <h2>検索ワードの例</h2>
+    <div class="small">
+      例：<b>期間限定</b>／<b>変更</b>／<b>分岐</b>／<b>景品</b>／<b>交換</b>／<b>宝箱</b>／<b>たね</b>
+    </div>
+
+    <h2>関連リンク</h2>
+    <div class="toolbar" style="gap:8px; flex-wrap:wrap; align-items:center;">
+      <a class="btn" href="./items.html">アイテム</a>
+      <a class="btn" href="./lucky_panel.html">ラッキーパネル</a>
+      <a class="btn" href="./bosses.html">ボス</a>
+      <a class="btn" href="./medals.html">ちいさなメダル</a>
+    </div>
+
+    <div class="small" style="margin-top:10px;">※本ページは「損しないための確認用メモ」です。最終的な挙動はゲーム内表示もあわせて確認してください。</div>
+  </section>
+<!-- seo-block:end -->
 </main>
 
 <footer>
@@ -46,7 +72,7 @@
   import { loadCSV } from "./assets/data.js";
   import { qs, escapeHTML } from "./assets/util.js";
 
-  boot("取り逃し厳禁まとめ（Q&A） | DQ7R");
+  boot("【DQ7R】取り逃し厳禁まとめ｜損しないQ&A");
 
   const Q = qs("#q");
   const OUT = qs("#out");
@@ -126,6 +152,25 @@
     });
 
     UPDATED.textContent = pickLatest(data);
+
+    // FAQ schema (JSON-LD) for rich results
+    const tag = document.getElementById("faq-jsonld");
+    if (tag){
+      const top = data.slice(0, 20);
+      tag.textContent = JSON.stringify({
+        "@context":"https://schema.org",
+        "@type":"FAQPage",
+        "mainEntity": top.map(r => ({
+          "@type":"Question",
+          "name": (r.question || "").toString().trim(),
+          "acceptedAnswer": {
+            "@type":"Answer",
+            "text": (r.answer || "").toString().trim()
+          }
+        }))
+      });
+    }
+
 
     Q.addEventListener("input", ()=>render(data));
     render(data);

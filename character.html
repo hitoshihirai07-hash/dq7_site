@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="./assets/style.css" />
-  <title>キャラクター詳細</title>
+  <title>【DQ7R】キャラクター詳細｜基本情報</title>
 
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./assets/icon-192.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <meta name="theme-color" content="#e8892f" />
-  <meta name="description" content="DQ7R のキャラクター詳細ページ。" />
+  <meta name="description" content="DQ7Rのキャラクター詳細。基本情報やメモを確認できます。" />
 </head>
 <body>
 <main>
@@ -19,6 +19,18 @@
     <p>キャラクター一覧から選んで開けます。</p>
   </div>
   <div id="wrap" class="grid"></div>
+<!-- seo-detail:start -->
+<div class="card">
+    <h2>キャラクター詳細の見方</h2>
+    <p>このページでは、キャラクターの基本情報を確認できます。育成や構成を考えるときは、職業・呪文・特技の一覧もあわせて見るとスムーズです。</p>
+    <div class="toolbar" style="gap:8px; flex-wrap:wrap; align-items:center;">
+      <a class="btn" href="./characters.html">キャラクター一覧</a>
+      <a class="btn" href="./jobs.html">職業</a>
+      <a class="btn" href="./spells.html">呪文</a>
+      <a class="btn" href="./skills.html">特技</a>
+    </div>
+  </div>
+<!-- seo-detail:end -->
 </main>
 
 <footer>
@@ -67,6 +79,11 @@
     }
 
     document.title = `${ch.name || "キャラクター詳細"} | DQ7R`;
+    // meta description (for SERP snippet)
+    const nm = (ch.name || "").toString();
+    const md = document.querySelector('meta[name="description"]');
+    if (md) md.setAttribute('content', `DQ7Rのキャラクター「${nm || 'キャラクター'}」の詳細。基本情報やメモを確認。`);
+
 
     // 関連キャラクター（同じ加入章を優先して3件）
     const join = (ch.join_chapter || "").toString().trim();

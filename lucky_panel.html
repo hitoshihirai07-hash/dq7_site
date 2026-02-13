@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="./assets/style.css" />
-  <title>ラッキーパネル</title>
+  <title>【DQ7R】ラッキーパネル｜景品一覧＆盤面チェック</title>
 
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./assets/icon-192.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <meta name="theme-color" content="#e8892f" />
-  <meta name="description" content="ラッキーパネルの景品一覧と盤面チェック用ツール。" />
+  <meta name="description" content="DQ7Rのラッキーパネル用ツール。景品一覧と盤面チェック（過去/現代、盤面サイズ切替、消去、最近使った景品）。" />
 
   <style>
     .lp-note{margin:0; padding-left:18px}
@@ -195,6 +195,27 @@
     </section>
 
   </section>
+<!-- seo-block:start -->
+<div class="card">
+    <h2>ラッキーパネルを“記憶ゲー”にしない</h2>
+    <p>景品一覧を確認しながら、盤面をタップして配置をメモできます。保存しない使い捨て型なので、<b>その場の確認</b>に向いています。過去/現代や盤面サイズも切り替え可能です。</p>
+
+    <h2>時短のコツ</h2>
+    <ul class="list">
+      <li>先に景品を選ぶ → 盤面に置く（逆にしない）</li>
+      <li>「最近使った景品」を使うと入力が速い</li>
+      <li>迷ったら一度クリアして盤面サイズだけ合わせ直す</li>
+    </ul>
+
+    <h2>関連リンク</h2>
+    <div class="toolbar" style="gap:8px; flex-wrap:wrap; align-items:center;">
+      <a class="btn" href="./missables.html">取り逃しQ&A</a>
+      <a class="btn" href="./items.html">アイテム</a>
+      <a class="btn" href="./bosses.html">ボス</a>
+      <a class="btn" href="./damage.html">ダメージ計算</a>
+    </div>
+  </div>
+<!-- seo-block:end -->
 </main>
 
 <footer>
@@ -216,7 +237,7 @@
   import { loadCSV } from "./assets/data.js";
   import { qs, escapeHTML, makeTable } from "./assets/util.js";
 
-  boot("ラッキーパネル | DQ7R");
+  boot("【DQ7R】ラッキーパネル｜景品一覧＆盤面チェック");
 
   const PrizeTable = qs("#prizeTable");
   const Q = qs("#q");

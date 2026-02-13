@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="./assets/style.css" />
-  <title>ダメージ計算</title>
+  <title>【DQ7R】ダメージ計算｜与ダメ範囲・あと何発</title>
 
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./assets/icon-192.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <meta name="theme-color" content="#e8892f" />
-  <meta name="description" content="攻撃力・守備力・倍率からダメージ範囲を計算します（耐性・乱数込み）。" />
+  <meta name="description" content="DQ7Rのダメージ計算。攻撃力・守備力・倍率などからダメージ範囲を算出（耐性・乱数込み）。ボス戦の“あと何発”確認に。" />
 </head>
 <body>
 <main>
@@ -117,6 +117,27 @@
 
     <div id="out" style="margin-top:12px;"></div>
   </div>
+<!-- seo-block:start -->
+<div class="card">
+    <h2>この計算機で分かること</h2>
+    <p>攻撃力・守備力・倍率などから与ダメージの範囲を計算します。ボスの情報と組み合わせることで、<b>「勝てる火力か／あと何発か」</b>の判断が速くなります。</p>
+
+    <h2>使い方（60秒）</h2>
+    <ul class="list">
+      <li>攻撃力／相手守備力を入力</li>
+      <li>技や倍率を選択（分からない場合は空欄でもOK）</li>
+      <li>耐性・段階変化が分かるなら反映して計算</li>
+    </ul>
+
+    <h2>関連リンク</h2>
+    <div class="toolbar" style="gap:8px; flex-wrap:wrap; align-items:center;">
+      <a class="btn" href="./bosses.html">ボス一覧</a>
+      <a class="btn" href="./spells.html">呪文</a>
+      <a class="btn" href="./skills.html">特技</a>
+      <a class="btn" href="./jobs.html">職業</a>
+    </div>
+  </div>
+<!-- seo-block:end -->
 </main>
 
 <footer>
@@ -149,7 +170,7 @@
     computeHitsToKill,
   } from "./assets/damage_calc.js";
 
-  boot("ダメージ計算 | DQ7R");
+  boot("【DQ7R】ダメージ計算｜与ダメ範囲・あと何発");
 
   const EL = {
     boss: document.getElementById("boss"),

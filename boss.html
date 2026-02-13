@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="./assets/style.css" />
-  <title>ボス詳細</title>
+  <title>【DQ7R】ボス詳細｜弱点・耐性とダメージ計算</title>
 
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./assets/icon-192.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <meta name="theme-color" content="#e8892f" />
-  <meta name="description" content="DQ7R のボス詳細ページ。" />
+  <meta name="description" content="DQ7Rのボス詳細。弱点・耐性・メモを確認し、ダメージ計算で“あと何発”を見積もれます。" />
   <style>
     .tabs{display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 6px;}
     .tabbtn{
@@ -28,6 +28,18 @@
   </div>
 
   <div id="wrap" class="grid two"></div>
+<!-- seo-detail:start -->
+<div class="card">
+    <h2>ボス詳細の見方</h2>
+    <p>このページでは、ボスの基本情報（弱点・耐性・メモなど）を確認できます。火力が足りるか不安なら、下のリンクからダメージ計算へ進んで“あと何発”を見積もるのが最短です。</p>
+    <div class="toolbar" style="gap:8px; flex-wrap:wrap; align-items:center;">
+      <a class="btn" href="./damage.html">ダメージ計算</a>
+      <a class="btn" href="./bosses.html">ボス一覧</a>
+      <a class="btn" href="./spells.html">呪文</a>
+      <a class="btn" href="./skills.html">特技</a>
+    </div>
+  </div>
+<!-- seo-detail:end -->
 </main>
 
 <footer>
@@ -270,6 +282,11 @@
     function update(bossId){
       const b = items.find(x => x.boss_id === bossId) || mainBoss;
       document.title = `${b.name || b.boss_id} | ボス詳細`;
+      // meta description (for SERP snippet)
+      const nm = (b.name || b.boss_id || "").toString();
+      const md = document.querySelector('meta[name="description"]');
+      if (md) md.setAttribute('content', `DQ7Rのボス「${nm}」の詳細。弱点・耐性の確認と、ダメージ計算で“あと何発”の見積もり。`);
+
 
       el("bossName").innerHTML = escapeHTML(b.name || "");
       el("bossId").innerHTML = escapeHTML(b.boss_id || "");

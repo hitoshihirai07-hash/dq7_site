@@ -4,12 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="./assets/style.css" />
-  <title>呪文</title>
+  <title>【DQ7R】呪文一覧｜検索・属性絞り込み</title>
 
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./assets/icon-192.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <meta name="theme-color" content="#e8892f" />  <meta name="description" content="DQ7R の呪文一覧。検索・絞り込み対応。" />
+  <meta name="theme-color" content="#e8892f" />  <meta name="description" content="DQ7Rの呪文一覧。検索と属性フィルタで絞り込み。回復・補助・攻撃呪文を比較して、ボスに通る候補を素早く決定。" />
 </head>
 <body>
 <main>
@@ -26,6 +26,27 @@
     </div>
     <div id="out"></div>
   </section>
+<!-- seo-block:start -->
+<div class="card">
+    <h2>呪文を“探す→決める”ための一覧</h2>
+    <p>呪文名の検索と属性フィルタで、候補を一気に絞り込めます。「回復の最適化」「補助の優先度」「属性が通る？」の確認を、<b>名前検索→比較</b>で迷わない形にしています。</p>
+
+    <h2>よくある使い方</h2>
+    <ul class="list">
+      <li>属性フィルタで“通る属性”だけを表示</li>
+      <li>役割（回復/補助/攻撃）で候補を探す</li>
+      <li>ボスの耐性を見た後に、呪文側で再検索して決定</li>
+    </ul>
+
+    <h2>関連リンク</h2>
+    <div class="toolbar" style="gap:8px; flex-wrap:wrap; align-items:center;">
+      <a class="btn" href="./bosses.html">ボス</a>
+      <a class="btn" href="./skills.html">特技</a>
+      <a class="btn" href="./jobs.html">職業</a>
+      <a class="btn" href="./damage.html">ダメージ計算</a>
+    </div>
+  </div>
+<!-- seo-block:end -->
 </main>
 
 <footer>
@@ -47,7 +68,7 @@
   import { loadCSV } from "./assets/data.js";
   import { qs, escapeHTML } from "./assets/util.js";
 
-  boot("呪文 | DQ7R");
+  boot("【DQ7R】呪文一覧｜検索・属性絞り込み");
 
   const Q = qs("#q");
   const EL = qs("#el");

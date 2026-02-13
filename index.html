@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="./assets/style.css" />
-  <title>DQ7R データベース</title>
+  <title>DQ7R データベース｜ボス・職業・呪文/特技・アイテム検索＆計算</title>
 
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./assets/icon-192.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <meta name="theme-color" content="#e8892f" />
-  <meta name="description" content="『ドラゴンクエストVII Reimagined（DQ7R）』の確認用データベース。ボス・職業・呪文・特技・アイテムなどを検索・絞り込みで確認できます。" />
+  <meta name="description" content="DQ7R（ドラゴンクエストVII Reimagined）の確認用データベース。ボス・職業・呪文・特技・アイテム・キャラを検索・絞り込みで確認。ダメージ計算、ラッキーパネル、取り逃しQ&Aも搭載。" />
 </head>
 <body>
 <main>
@@ -57,6 +57,34 @@
 </section>
 
 <!-- grouped links inserted -->
+<!-- seo-block:start -->
+<section class="card">
+    <h2>DQ7Rを“最短で確認”するデータベース</h2>
+    <p>攻略中に「これ何だっけ？」となったとき、<b>検索と絞り込みで一発</b>で確認できるように、ボス／職業／呪文／特技／アイテム／キャラクターを整理しています。迷ったら、まずは取り逃しQ&Aで“損しないチェック”だけ先に済ませるのがおすすめです。</p>
+
+    <h2>よく使われる3つの導線</h2>
+    <ul class="list">
+      <li><b>ボス戦で詰まった</b>：ボス一覧 → 詳細 → 「このボスでダメージ計算」</li>
+      <li><b>転職/育成を整理したい</b>：職業一覧で絞り込み → 習得・条件を確認</li>
+      <li><b>作業系を時短したい</b>：ラッキーパネルで景品/盤面をサクッとメモ</li>
+    </ul>
+
+    <h2>主要ページ</h2>
+    <div class="toolbar" style="gap:8px; flex-wrap:wrap; align-items:center;">
+      <a class="btn" href="./bosses.html">ボス一覧</a>
+      <a class="btn" href="./jobs.html">職業</a>
+      <a class="btn" href="./spells.html">呪文</a>
+      <a class="btn" href="./skills.html">特技</a>
+      <a class="btn" href="./items.html">アイテム</a>
+      <a class="btn" href="./characters.html">キャラクター</a>
+      <a class="btn" href="./damage.html">ダメージ計算</a>
+      <a class="btn" href="./lucky_panel.html">ラッキーパネル</a>
+      <a class="btn" href="./missables.html">取り逃しQ&A</a>
+    </div>
+
+    <div class="small" style="margin-top:10px;">本編クリアまでの範囲を優先して整備し、クリア後／追加要素は必要に応じて反映します。</div>
+  </section>
+<!-- seo-block:end -->
 </main>
 
 <footer>
@@ -75,7 +103,7 @@
 
 <script type="module">
   import { boot } from "./assets/app_common.js";
-  boot("DQ7R データベース");
+  boot("DQ7R データベース｜ボス・職業・呪文/特技・アイテム検索＆計算");
 </script>
 </body>
 </html>

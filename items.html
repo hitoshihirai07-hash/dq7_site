@@ -4,12 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="./assets/style.css" />
-  <title>アイテム</title>
+  <title>【DQ7R】アイテム一覧｜用途・入手メモで検索</title>
 
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./assets/icon-192.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <meta name="theme-color" content="#e8892f" />  <meta name="description" content="DQ7R のアイテム一覧。検索・絞り込み対応。" />
+  <meta name="theme-color" content="#e8892f" />  <meta name="description" content="DQ7Rのアイテム一覧。カテゴリ絞り込み＋名前/入手メモ検索で用途や入手経路を確認。取り逃し対策にも。" />
 </head>
 <body>
 <main>
@@ -26,6 +26,27 @@
     </div>
     <div id="out"></div>
   </section>
+<!-- seo-block:start -->
+<div class="card">
+    <h2>アイテムを“用途・入手メモ”で探せる</h2>
+    <p>カテゴリで絞り込みつつ、入手メモや名前検索で「どこで手に入る？」「何に使う？」を素早く確認できます。装備・消費・素材が混ざっても、<b>検索で目的物に一直線</b>です。</p>
+
+    <h2>よくある使い方</h2>
+    <ul class="list">
+      <li>カテゴリで大枠を絞ってから、キーワード検索で確定</li>
+      <li>「入手」「交換」「景品」などの語で、入手経路を探す</li>
+      <li>取り逃しが不安なら、取り逃しQ&A側でも同じ語で検索</li>
+    </ul>
+
+    <h2>関連リンク</h2>
+    <div class="toolbar" style="gap:8px; flex-wrap:wrap; align-items:center;">
+      <a class="btn" href="./missables.html">取り逃しQ&A</a>
+      <a class="btn" href="./lucky_panel.html">ラッキーパネル</a>
+      <a class="btn" href="./jobs.html">職業</a>
+      <a class="btn" href="./bosses.html">ボス</a>
+    </div>
+  </div>
+<!-- seo-block:end -->
 </main>
 
 <footer>
@@ -47,7 +68,7 @@
   import { loadCSV } from "./assets/data.js";
   import { qs, escapeHTML } from "./assets/util.js";
 
-  boot("アイテム | DQ7R");
+  boot("【DQ7R】アイテム一覧｜用途・入手メモで検索");
 
   const Q = qs("#q");
   const CAT = qs("#cat");

@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="./assets/style.css" />
-  <title>ボス</title>
+  <title>【DQ7R】ボス一覧｜検索→詳細→ダメージ計算</title>
 
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./assets/icon-192.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <meta name="theme-color" content="#e8892f" />
-  <meta name="description" content="DQ7R のボス一覧。検索・絞り込み対応。" />
+  <meta name="description" content="DQ7Rのボス一覧。名前/場所/メモで検索し、詳細からダメージ計算へ。弱点・耐性の確認と“あと何発”の見積もりを最短で。" />
 </head>
 <body>
 <main>
@@ -24,6 +24,27 @@
 
     <div id="out" style="margin-top:12px;"></div>
   </div>
+<!-- seo-block:start -->
+<div class="card">
+    <h2>このページでできること</h2>
+    <p>ボス名・場所・メモで検索して、詳細へ。必要なら、そのまま「このボスでダメージ計算」へ進み、<b>勝てるライン（あと何発）</b>まで一気に見積もれます。</p>
+
+    <h2>ボス戦の最短チェック</h2>
+    <ul class="list">
+      <li>弱点・耐性（属性が通るか）</li>
+      <li>補助（攻撃/守備の段階変化）が効くか</li>
+      <li>与ダメの目安（計算して“あと何発”を決める）</li>
+    </ul>
+
+    <h2>関連リンク</h2>
+    <div class="toolbar" style="gap:8px; flex-wrap:wrap; align-items:center;">
+      <a class="btn" href="./damage.html">ダメージ計算</a>
+      <a class="btn" href="./missables.html">取り逃しQ&A</a>
+      <a class="btn" href="./spells.html">呪文</a>
+      <a class="btn" href="./skills.html">特技</a>
+    </div>
+  </div>
+<!-- seo-block:end -->
 </main>
 
 <footer>
@@ -45,7 +66,7 @@
   import { loadCSV } from "./assets/data.js";
   import { qs, escapeHTML } from "./assets/util.js";
 
-  boot("ボス | DQ7R");
+  boot("【DQ7R】ボス一覧｜検索→詳細→ダメージ計算");
 
   const Q = qs("#q");
   const OUT = qs("#out");

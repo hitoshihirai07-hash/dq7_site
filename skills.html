@@ -4,12 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="./assets/style.css" />
-  <title>特技</title>
+  <title>【DQ7R】特技一覧｜検索・属性絞り込み</title>
 
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./assets/icon-192.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <meta name="theme-color" content="#e8892f" />  <meta name="description" content="DQ7R の特技一覧。検索・絞り込み対応。" />
+  <meta name="theme-color" content="#e8892f" />  <meta name="description" content="DQ7Rの特技一覧。検索と属性フィルタで絞り込み。火力技・補助/妨害を比較して“今使う技”を決めやすく。" />
 </head>
 <body>
 <main>
@@ -26,6 +26,27 @@
     </div>
     <div id="out"></div>
   </section>
+<!-- seo-block:start -->
+<div class="card">
+    <h2>特技の比較が一瞬で終わる</h2>
+    <p>特技は似た効果が多く、迷いやすいカテゴリです。検索と属性フィルタで絞り込み、<b>「今の状況で使うべき技」</b>を選びやすくしています。</p>
+
+    <h2>よくある使い方</h2>
+    <ul class="list">
+      <li>火力技：倍率・属性で候補を絞る</li>
+      <li>補助/妨害：目的（守備↓/命中↓など）で検索</li>
+      <li>ボスの耐性に合わせて、通る特技を選ぶ</li>
+    </ul>
+
+    <h2>関連リンク</h2>
+    <div class="toolbar" style="gap:8px; flex-wrap:wrap; align-items:center;">
+      <a class="btn" href="./bosses.html">ボス</a>
+      <a class="btn" href="./spells.html">呪文</a>
+      <a class="btn" href="./jobs.html">職業</a>
+      <a class="btn" href="./damage.html">ダメージ計算</a>
+    </div>
+  </div>
+<!-- seo-block:end -->
 </main>
 
 <footer>
@@ -47,7 +68,7 @@
   import { loadCSV } from "./assets/data.js";
   import { qs, escapeHTML } from "./assets/util.js";
 
-  boot("特技 | DQ7R");
+  boot("【DQ7R】特技一覧｜検索・属性絞り込み");
 
   const Q = qs("#q");  const EL = qs("#el");
   const OUT = qs("#out");

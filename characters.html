@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="./assets/style.css" />
-  <title>キャラクター</title>
+  <title>【DQ7R】キャラ一覧｜仲間・主要キャラを検索</title>
 
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./assets/icon-192.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <meta name="theme-color" content="#e8892f" />
-  <meta name="description" content="DQ7R のキャラクター一覧。検索・絞り込み対応。" />
+  <meta name="description" content="DQ7Rのキャラクター一覧。名前検索で仲間・主要キャラを素早く確認。職業・呪文・特技の確認導線も。" />
 </head>
 <body>
 <main>
@@ -25,6 +25,20 @@
 
     <div id="out" style="margin-top:12px;"></div>
   </div>
+<!-- seo-block:start -->
+<div class="card">
+    <h2>仲間・主要キャラを検索して確認</h2>
+    <p>キャラクターを一覧表示し、検索で絞り込みできます。名前から詳細に移動できるので、装備・職業・習得の確認など、攻略中の「確認したいだけ」を<b>最短</b>で終わらせます。</p>
+
+    <h2>関連リンク</h2>
+    <div class="toolbar" style="gap:8px; flex-wrap:wrap; align-items:center;">
+      <a class="btn" href="./jobs.html">職業</a>
+      <a class="btn" href="./spells.html">呪文</a>
+      <a class="btn" href="./skills.html">特技</a>
+      <a class="btn" href="./items.html">アイテム</a>
+    </div>
+  </div>
+<!-- seo-block:end -->
 </main>
 
 <footer>
@@ -45,7 +59,7 @@
   import { loadCSV } from "./assets/data.js";
   import { qs, escapeHTML, makeTable } from "./assets/util.js";
 
-  boot("キャラクター | DQ7R");
+  boot("【DQ7R】キャラ一覧｜仲間・主要キャラを検索");
 
   const Q = qs("#q");
   const OUT = qs("#out");

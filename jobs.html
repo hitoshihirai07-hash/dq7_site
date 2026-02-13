@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="./assets/style.css" />
-  <title>職業</title>
+  <title>【DQ7R】職業一覧｜転職ルート・習得を確認</title>
 
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./assets/icon-192.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <meta name="theme-color" content="#e8892f" />
-  <meta name="description" content="DQ7R の職業一覧。検索・絞り込み対応。" />
+  <meta name="description" content="DQ7Rの職業一覧。検索・グループ絞り込みで転職ルートや習得を確認。欲しい呪文・特技から逆算して決められる。" />
 </head>
 <body>
 <main>
@@ -66,6 +66,27 @@
 
     <div id="out" style="margin-top:12px;"></div>
   </div>
+<!-- seo-block:start -->
+<div class="card">
+    <h2>転職ルートを“見える化”する職業一覧</h2>
+    <p>職業を一覧で比較し、検索・グループ絞り込みで目的の職に一直線で到達できます。詳細ページで条件・習得を確認し、<b>次の候補</b>まで迷わず決められます。</p>
+
+    <h2>迷ったときの決め方</h2>
+    <ul class="list">
+      <li>不足している役割（火力/補助/回復/耐久）を決める</li>
+      <li>欲しい呪文・特技を逆算して職を選ぶ</li>
+      <li>火力が足りるか不安なら、ダメージ計算で目安を確認</li>
+    </ul>
+
+    <h2>関連リンク</h2>
+    <div class="toolbar" style="gap:8px; flex-wrap:wrap; align-items:center;">
+      <a class="btn" href="./spells.html">呪文</a>
+      <a class="btn" href="./skills.html">特技</a>
+      <a class="btn" href="./bosses.html">ボス</a>
+      <a class="btn" href="./damage.html">ダメージ計算</a>
+    </div>
+  </div>
+<!-- seo-block:end -->
 </main>
 
 <footer>
@@ -86,7 +107,7 @@
   import { loadCSV } from "./assets/data.js";
   import { qs, escapeHTML, makeTable } from "./assets/util.js";
 
-  boot("職業 | DQ7R");
+  boot("【DQ7R】職業一覧｜転職ルート・習得を確認");
 
   const Q = qs("#q");
   const GROUP = qs("#group");
