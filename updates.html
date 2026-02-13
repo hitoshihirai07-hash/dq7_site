@@ -102,9 +102,8 @@
 
     const pages = splitPipe(r.pages).map(p=>{
       const safe = escapeHTML(p);
-      const href = p && p.endsWith(".html") ? `./${p}` : `./${p}`;
-      return `<a href="${href}">${safe}</a>`;
-    }).join(" / ");
+      return `<span class="chip" style="margin-right:6px; margin-top:6px;">${safe}</span>`;
+    }).join("");
 
     const tags = splitPipe(r.tags).map(t=>`<span class="chip" style="margin-right:6px; margin-top:6px;">${escapeHTML(t)}</span>`).join("");
 
