@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="./assets/style.css" />
+  <title>更新履歴 | DQ7R データベース</title>
+
+  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./assets/icon-192.png" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <meta name="theme-color" content="#e8892f" />
+  <meta name="description" content="DQ7R データベースの更新履歴。data/current/updates.csv を編集するだけで反映されるCSV連動型のログです。" />
+</head>
+<body>
+<main>
+  <div class="card">
+    <h1>更新履歴</h1>
+    <p class="small">
+      <b>CSV連動：</b><code>data/current/updates.csv</code> を編集してアップロードすると、このページに自動反映されます。
+      （推奨：新しい行を上に追加）
+    </p>
+
+    <div class="toolbar" style="align-items:flex-end; flex-wrap:wrap;">
+      <div>
+        <div class="small">検索</div>
+        <input id="q" class="input" placeholder="検索（更新内容 / タグ / 対象ページ）" />
+      </div>
+      <div>
+        <div class="small">タグ</div>
+        <select id="tag">
+          <option value="">すべて</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="out" style="margin-top:12px;"></div>
+
+    <details style="margin-top:14px;">
+      <summary>CSVの書き方（テンプレ）</summary>
+      <div class="small" style="margin-top:8px;">
+        列：<code>date, category, title, summary, pages, tags</code><br/>
+        <ul>
+          <li><code>date</code>：YYYY-MM-DD</li>
+          <li><code>pages</code>：対象ページを <code>|</code> 区切り（例：<code>bosses.html|damage.html</code>）</li>
+          <li><code>tags</code>：タグを <code>|</code> 区切り（例：<code>seo|bugfix</code>）</li>
+        </ul>
+      </div>
+    </details>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-links">
+        <a href="./about.html">このサイトについて</a>
+        <a href="./updates.html">更新履歴</a>
+        <a href="./privacy.html">プライバシーポリシー</a>
+        <a href="./contact.html">お問い合わせ</a>
+      </div>
+      <div class="small" style="margin-top:6px;">※非公式ファンサイトです。掲載情報は参考用です。</div>
+      <div class="footer-copy small">© 2026 DQ7R データベース</div>
+    </div>
+  </footer>
+</main>
+
+<script type="module">
+  import { boot } from "./assets/app_common.js";
+  import { loadCSV } from "./assets/data.js";
+  import { escapeHTML } from "./assets/util.js";
+
+  boot("更新履歴 | DQ7R データベース");
+
+  const OUT = document.getElementById("out");
+  const Q = document.getElementById("q");
+  const TAG = document.getElementById("tag");
+
+  function norm(s){
+    return (s || "").toString().normalize("NFKC").toLowerCase().trim();
+  }
+
+  function splitPipe(s){
+    return (s || "").toString().split("|").map(x=>x.trim()).filter(Boolean);
+  }
+
+  function parseDate(s){
+    const t = (s || "").toString().trim();
+    if (!t) return 0;
+    // YYYY-MM-DD or YYYY/MM/DD
+    const m = t.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
+    if (m){
+      const y = +m[1], mo = +m[2], d = +m[3];
+      const dt = new Date(y, mo-1, d);
+      return dt.getTime() || 0;
+    }
+    const dt = new Date(t);
+    return dt.getTime() || 0;
+  }
+
+  function buildTagOptions(all){
+    const set = new Set();
+    for (const r of all){
+      splitPipe(r.tags).forEach(t => set.add(t));
+    }
+    const tags = Array.from(set).sort((a,b)=>a.localeCompare(b,'ja'));
+    for (const t of tags){
+      const opt = document.createElement("option");
+      opt.value = t;
+      opt.textContent = t;
+      TAG.appendChild(opt);
+    }
+  }
+
+  function renderRow(r){
+    const date = escapeHTML(r.date || "");
+    const cat = escapeHTML(r.category || "");
+    const title = escapeHTML(r.title || "");
+    const summary = escapeHTML(r.summary || "");
+
+    const pages = splitPipe(r.pages).map(p=>{
+      const safe = escapeHTML(p);
+      const href = p && p.endsWith(".html") ? `./${p}` : `./${p}`;
+      return `<a href="${href}">${safe}</a>`;
+    }).join(" / ");
+
+    const tags = splitPipe(r.tags).map(t=>`<span class="chip" style="margin-right:6px; margin-top:6px;">${escapeHTML(t)}</span>`).join("");
+
+    return `
+      <section class="card" style="margin-top:12px;">
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          ${date ? `<span class="chip">${date}</span>` : ``}
+          ${cat ? `<span class="chip">${cat}</span>` : ``}
+        </div>
+        <h2 style="margin-top:10px;">${title}</h2>
+        ${summary ? `<p>${summary}</p>` : ``}
+        ${pages ? `<div class="small">対象: ${pages}</div>` : ``}
+        ${tags ? `<div style="margin-top:6px;">${tags}</div>` : ``}
+      </section>
+    `;
+  }
+
+  async function main(){
+    const rows = await loadCSV("./data/current/updates.csv");
+    // normalize keys
+    const data = rows.map(r=>({
+      date: r.date ?? "",
+      category: r.category ?? "",
+      title: r.title ?? "",
+      summary: r.summary ?? "",
+      pages: r.pages ?? "",
+      tags: r.tags ?? ""
+    }));
+
+    data.sort((a,b)=>parseDate(b.date)-parseDate(a.date));
+
+    buildTagOptions(data);
+
+    function doRender(){
+      const q = norm(Q.value);
+      const tag = (TAG.value || "").toString().trim();
+
+      const filtered = data.filter(r=>{
+        if (tag){
+          const tags = splitPipe(r.tags);
+          if (!tags.includes(tag)) return false;
+        }
+        if (!q) return true;
+        const hay = norm([r.date, r.category, r.title, r.summary, r.pages, r.tags].join(" "));
+        return hay.includes(q);
+      });
+
+      OUT.innerHTML = filtered.length
+        ? filtered.map(renderRow).join("") + `<div class="small" style="margin-top:10px;">件数: ${filtered.length}</div>`
+        : `<div class="warn">該当する更新履歴が見つかりません。</div>`;
+    }
+
+    Q.addEventListener("input", doRender);
+    TAG.addEventListener("change", doRender);
+    doRender();
+  }
+
+  main();
+</script>
+</body>
+</html>

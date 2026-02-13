@@ -1,0 +1,3 @@
+date,category,title,summary,pages,tags
+2026-02-13,SEO,主要ページにSEO本文＆meta最適化を追加,トップ/一覧/ツール/取り逃しQ&Aに導入文・使い方・内部リンクを追加し、title/descriptionを最適化しました。,index.html|bosses.html|jobs.html|spells.html|skills.html|items.html|characters.html|damage.html|lucky_panel.html|missables.html,seo|content|internal-link
+2026-02-13,機能,更新履歴ページ（CSV連動）を追加,data/current/updates.csv を編集するだけで更新履歴に反映される仕組みを追加しました。,updates.html|assets/layout.js|data/current/updates.csv,changelog|csv
