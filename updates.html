@@ -10,17 +10,12 @@
   <link rel="apple-touch-icon" href="./assets/icon-192.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <meta name="theme-color" content="#e8892f" />
-  <meta name="description" content="DQ7R データベースの更新履歴。data/current/updates.csv を編集するだけで反映されるCSV連動型のログです。" />
+  <meta name="description" content="DQ7R データベースの更新履歴ページです。" />
 </head>
 <body>
 <main>
   <div class="card">
     <h1>更新履歴</h1>
-    <p class="small">
-      <b>CSV連動：</b><code>data/current/updates.csv</code> を編集してアップロードすると、このページに自動反映されます。
-      （推奨：新しい行を上に追加）
-    </p>
-
     <div class="toolbar" style="align-items:flex-end; flex-wrap:wrap;">
       <div>
         <div class="small">検索</div>
@@ -36,18 +31,7 @@
 
     <div id="out" style="margin-top:12px;"></div>
 
-    <details style="margin-top:14px;">
-      <summary>CSVの書き方（テンプレ）</summary>
-      <div class="small" style="margin-top:8px;">
-        列：<code>date, category, title, summary, pages, tags</code><br/>
-        <ul>
-          <li><code>date</code>：YYYY-MM-DD</li>
-          <li><code>pages</code>：対象ページを <code>|</code> 区切り（例：<code>bosses.html|damage.html</code>）</li>
-          <li><code>tags</code>：タグを <code>|</code> 区切り（例：<code>seo|bugfix</code>）</li>
-        </ul>
-      </div>
-    </details>
-  </div>
+    </div>
 
   <footer class="footer">
     <div class="footer-inner">
