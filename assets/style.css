@@ -361,3 +361,17 @@ progress::-webkit-progress-value{background:rgba(232,137,47,.85); border-radius:
 @media (max-width: 720px){
   .footer-copy{width:100%;}
 }
+
+
+.small{font-size:12px;color:var(--muted)}
+.muted{color:var(--muted)}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse;background:#fff}
+th,td{border-bottom:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top;white-space:nowrap}
+th{background:#fff7ec;font-size:13px}
+.status-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.status-card{border:1px solid var(--line);border-radius:12px;background:#fff7ec;padding:10px 12px}
+.status-label{font-size:12px;color:var(--muted);font-weight:700}
+.status-value{font-size:24px;font-weight:800;line-height:1.2;margin-top:4px}
+.status-sub{font-size:12px;color:var(--muted);margin-top:4px}
+@media (min-width: 900px){.status-grid{grid-template-columns:repeat(6,minmax(0,1fr));}}

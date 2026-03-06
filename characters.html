@@ -25,6 +25,21 @@
 
     <div id="out" style="margin-top:12px;"></div>
   </div>
+
+  <div class="card" style="margin-top:14px;">
+    <h2>ステータス計算</h2>
+    <p>キャラ・レベル・職業を選ぶと、素の値と職業補正、計算後の値を確認できます。</p>
+
+    <div class="toolbar">
+      <select id="calcCharacter" aria-label="キャラ選択"></select>
+      <select id="calcLevel" aria-label="レベル選択"></select>
+      <select id="calcJob" aria-label="職業選択"></select>
+    </div>
+
+    <div id="calcSummary" class="status-grid" style="margin-top:12px;"></div>
+    <div id="calcOut" style="margin-top:12px;"></div>
+    <div class="small" id="calcNote" style="margin-top:8px;"></div>
+  </div>
 <!-- seo-block:start -->
 <div class="card">
     <h2>仲間・主要キャラを検索して確認</h2>
@@ -64,6 +79,15 @@
 
   const Q = qs("#q");
   const OUT = qs("#out");
+  const calcCharacter = qs("#calcCharacter");
+  const calcLevel = qs("#calcLevel");
+  const calcJob = qs("#calcJob");
+  const calcSummary = qs("#calcSummary");
+  const calcOut = qs("#calcOut");
+  const calcNote = qs("#calcNote");
+
+  const statKeys = ["HP","MP","ちから","みのまもり","攻撃魔力","回復魔力","素早さ","きようさ","魅力"];
+  const primaryStats = ["HP","MP","ちから","みのまもり"];
 
   const cols = [
     {
@@ -72,7 +96,6 @@
       render:(r)=>{
         const id = (r.chara_id || "").trim();
         const name = escapeHTML(r.name || "");
-        const idHtml = escapeHTML(r.chara_id || "");
         return `<a href="./character.html?id=${encodeURIComponent(id)}">${name}</a>`;
       }
     },
@@ -82,23 +105,152 @@
   ];
 
   function norm(s){ return (s||"").toLowerCase(); }
+  function num(v){
+    const n = Number(v);
+    return Number.isFinite(n) ? Math.round(n) : 0;
+  }
 
-  async function render(){
-    const rows = await loadCSV("./data/current/characters.csv");
+  let characters = [];
+  let baseRows = [];
+  let jobRows = [];
+  const charById = new Map();
+  const rowsByCharacter = new Map();
+  const jobsByName = new Map();
+
+  function characterName(id){
+    return charById.get(id)?.name || id;
+  }
+
+  function renderCharacterList(){
     const q = norm(Q.value.trim());
-
-    const filtered = rows.filter(r=>{
+    const filtered = characters.filter(r=>{
       if (!q) return true;
       const blob = [r.chara_id,r.name,r.join_chapter,r.profile_short,r.notes].join(" ").toLowerCase();
       return blob.includes(q);
     });
-
-    OUT.innerHTML = makeTable(filtered, cols) +
-      `<div class="small" style="margin-top:8px;">件数: ${filtered.length}</div>`;
+    OUT.innerHTML = makeTable(filtered, cols) + `<div class="small" style="margin-top:8px;">件数: ${filtered.length}</div>`;
   }
 
-  Q.addEventListener("input", render);
-  render();
+  function fillCharacterSelect(){
+    calcCharacter.innerHTML = characters.map(r=>`<option value="${escapeHTML(r.chara_id)}">${escapeHTML(r.name)}</option>`).join("");
+  }
+
+  function fillJobSelect(){
+    calcJob.innerHTML = [`<option value="">職業補正なし</option>`].concat(
+      jobRows.map(r=>`<option value="${escapeHTML(r["職業"] || "")}">${escapeHTML(r["職業"] || "")}</option>`)
+    ).join("");
+  }
+
+  function fillLevelSelect(charaId, preferredLevel = null){
+    const rows = rowsByCharacter.get(charaId) || [];
+    calcLevel.innerHTML = rows.map(r=>{
+      const lv = String(r["レベル"] || "");
+      return `<option value="${escapeHTML(lv)}">Lv ${escapeHTML(lv)}</option>`;
+    }).join("");
+    if (preferredLevel && rows.some(r => String(r["レベル"]) === String(preferredLevel))) {
+      calcLevel.value = String(preferredLevel);
+    }
+  }
+
+  function statCard(label, value, sub = ""){
+    return `<div class="status-card"><div class="status-label">${escapeHTML(label)}</div><div class="status-value">${escapeHTML(String(value))}</div>${sub ? `<div class="status-sub">${escapeHTML(sub)}</div>` : ``}</div>`;
+  }
+
+  function renderCalc(){
+    const charaId = calcCharacter.value;
+    const level = calcLevel.value;
+    const jobName = calcJob.value;
+    const rows = rowsByCharacter.get(charaId) || [];
+    const base = rows.find(r => String(r["レベル"]) === String(level));
+    const job = jobName ? jobsByName.get(jobName) : null;
+
+    if (!base) {
+      calcSummary.innerHTML = "";
+      calcOut.innerHTML = "<p>データが見つかりません。</p>";
+      calcNote.textContent = "";
+      return;
+    }
+
+    const cards = [];
+    for (const key of primaryStats) {
+      const baseValue = num(base[key]);
+      const bonus = job ? num(job[key]) : 0;
+      const total = baseValue + bonus;
+      const signed = bonus > 0 ? `+${bonus}` : `${bonus}`;
+      cards.push(statCard(key, total, `${baseValue} ${bonus ? `(${signed})` : `(±0)`}`));
+    }
+    cards.push(statCard("経験値", num(base["経験値"])));
+    cards.push(statCard("次レベル", num(base["次レベル"])));
+    calcSummary.innerHTML = cards.join("");
+
+    const tableRows = statKeys.map((key) => {
+      const baseValue = num(base[key]);
+      const bonus = job ? num(job[key]) : 0;
+      const total = baseValue + bonus;
+      return {
+        項目: key,
+        素の値: String(baseValue),
+        補正: bonus > 0 ? `+${bonus}` : String(bonus),
+        計算後: String(total)
+      };
+    });
+
+    calcOut.innerHTML = makeTable(tableRows, [
+      { key:"項目", label:"項目" },
+      { key:"素の値", label:"素の値" },
+      { key:"補正", label:"職業補正" },
+      { key:"計算後", label:"計算後" }
+    ]);
+
+    const charName = characterName(charaId);
+    calcNote.textContent = `${charName} / Lv ${level}${jobName ? ` / ${jobName}` : " / 職業補正なし"}`;
+  }
+
+  async function init(){
+    [characters, baseRows, jobRows] = await Promise.all([
+      loadCSV("./data/current/characters.csv"),
+      loadCSV("./data/current/characters_data.csv"),
+      loadCSV("./data/current/jobs_value.csv")
+    ]);
+
+    characters.forEach(r => charById.set(r.chara_id, r));
+    for (const row of baseRows) {
+      const id = row["キャラID"] || "";
+      if (!rowsByCharacter.has(id)) rowsByCharacter.set(id, []);
+      rowsByCharacter.get(id).push(row);
+    }
+    for (const rows of rowsByCharacter.values()) {
+      rows.sort((a,b)=> num(a["レベル"]) - num(b["レベル"]));
+    }
+    for (const row of jobRows) {
+      jobsByName.set(row["職業"], row);
+    }
+
+    renderCharacterList();
+    fillCharacterSelect();
+    fillJobSelect();
+    const firstId = characters[0]?.chara_id || "";
+    if (firstId) {
+      calcCharacter.value = firstId;
+      fillLevelSelect(firstId, rowsByCharacter.get(firstId)?.[0]?.["レベル"] || "1");
+      renderCalc();
+    }
+  }
+
+  Q.addEventListener("input", renderCharacterList);
+  calcCharacter.addEventListener("change", ()=>{
+    const currentLevel = calcLevel.value;
+    fillLevelSelect(calcCharacter.value, currentLevel);
+    renderCalc();
+  });
+  calcLevel.addEventListener("change", renderCalc);
+  calcJob.addEventListener("change", renderCalc);
+
+  init().catch((err)=>{
+    console.error(err);
+    OUT.innerHTML = `<p>データの読み込みに失敗しました。</p>`;
+    calcOut.innerHTML = `<p>ステータス計算の読み込みに失敗しました。</p>`;
+  });
 </script>
 </body>
 </html>
