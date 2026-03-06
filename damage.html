@@ -26,16 +26,20 @@
     .col-12{grid-column:span 12;}
     .damage-actions{display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:flex-end;}
     .damage-inline-note{display:flex; align-items:center; min-height:42px;}
-    .damage-result-grid{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px;}
-    .damage-result-card{padding:12px; min-width:0;}
-    .damage-result-card .num{font-size:24px; font-weight:700; line-height:1.2;}
-    .damage-subgrid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:10px;}
+    #out{width:100%;}
+    .damage-summary-row{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+    .damage-result-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; width:100%;}
+    .damage-result-card{padding:12px; min-width:0; writing-mode:horizontal-tb; text-orientation:mixed;}
+    .damage-result-card *{writing-mode:horizontal-tb; text-orientation:mixed; word-break:keep-all; overflow-wrap:anywhere;}
+    .damage-result-card .num{font-size:24px; font-weight:700; line-height:1.2; white-space:normal;}
+    .damage-subgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:10px; margin-top:10px; width:100%;}
+    .row{display:flex; gap:8px; align-items:center;}
+    .pill{display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border:1px solid var(--line); border-radius:999px; background:#fff; color:var(--text);}
     .segmented{display:flex; flex-wrap:wrap; gap:8px;}
     .segmented .btn{padding:.55rem .8rem;}
     @media (max-width: 980px){
       .col-2,.col-3,.col-4,.col-5,.col-6,.col-8{grid-column:span 6;}
-      .damage-result-grid{grid-template-columns:1fr;}
-      .damage-subgrid{grid-template-columns:1fr;}
+      .damage-result-grid,.damage-subgrid{grid-template-columns:1fr;}
     }
     @media (max-width: 640px){
       .col-2,.col-3,.col-4,.col-5,.col-6,.col-8,.col-12{grid-column:span 12;}
@@ -465,7 +469,7 @@
     ` : '';
 
     EL.out.innerHTML = `
-      <div class="row" style="gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+      <div class="damage-summary-row">
         <div class="pill">基本倍率：<b>${Number(multPack?.base ?? 1).toFixed(2)}</b></div>
         <div class="pill">補助：<b>${escape(buffLabel)}</b> / <b>${Number(multPack?.buff ?? 1).toFixed(2)}</b></div>
         <div class="pill">その他：<b>${Number(multPack?.other ?? 1).toFixed(2)}</b></div>
