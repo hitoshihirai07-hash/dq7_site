@@ -28,12 +28,13 @@
 
   <div class="card" style="margin-top:14px;">
     <h2>ステータス計算</h2>
-    <p>キャラ・レベル・職業を選ぶと、素の値と職業補正、計算後の値を確認できます。</p>
+    <p>キャラ・レベル・2つの職業を選ぶと、素の値と職業補正率、計算後の値を確認できます。</p>
 
     <div class="toolbar">
       <select id="calcCharacter" aria-label="キャラ選択"></select>
       <select id="calcLevel" aria-label="レベル選択"></select>
-      <select id="calcJob" aria-label="職業選択"></select>
+      <select id="calcJob1" aria-label="1つ目の職業選択"></select>
+      <select id="calcJob2" aria-label="2つ目の職業選択"></select>
     </div>
 
     <div id="calcSummary" class="status-grid" style="margin-top:12px;"></div>
@@ -81,7 +82,8 @@
   const OUT = qs("#out");
   const calcCharacter = qs("#calcCharacter");
   const calcLevel = qs("#calcLevel");
-  const calcJob = qs("#calcJob");
+  const calcJob1 = qs("#calcJob1");
+  const calcJob2 = qs("#calcJob2");
   const calcSummary = qs("#calcSummary");
   const calcOut = qs("#calcOut");
   const calcNote = qs("#calcNote");
@@ -110,6 +112,22 @@
     return Number.isFinite(n) ? Math.round(n) : 0;
   }
 
+  function hasValue(v){
+    return v != null && String(v).trim() !== "";
+  }
+
+  function isVisibleLevelRow(row){
+    const keys = ["HP","MP","ちから","みのまもり","攻撃魔力","回復魔力","素早さ","きようさ","魅力","経験値","次レベル"];
+    return keys.every((k) => hasValue(row[k]));
+  }
+
+  function calcWithJobs(baseValue, pct1, pct2){
+    const base = Number(baseValue || 0);
+    const p1 = Number(pct1 || 0);
+    const p2 = Number(pct2 || 0);
+    return Math.round(base + (base * p1) / 100 + (base * p2) / 100);
+  }
+
   let characters = [];
   let baseRows = [];
   let jobRows = [];
@@ -135,14 +153,16 @@
     calcCharacter.innerHTML = characters.map(r=>`<option value="${escapeHTML(r.chara_id)}">${escapeHTML(r.name)}</option>`).join("");
   }
 
-  function fillJobSelect(){
-    calcJob.innerHTML = [`<option value="">職業補正なし</option>`].concat(
+  function fillJobSelects(){
+    const options = [`<option value="">なし</option>`].concat(
       jobRows.map(r=>`<option value="${escapeHTML(r["職業"] || "")}">${escapeHTML(r["職業"] || "")}</option>`)
     ).join("");
+    calcJob1.innerHTML = options;
+    calcJob2.innerHTML = options;
   }
 
   function fillLevelSelect(charaId, preferredLevel = null){
-    const rows = rowsByCharacter.get(charaId) || [];
+    const rows = (rowsByCharacter.get(charaId) || []).filter(isVisibleLevelRow);
     calcLevel.innerHTML = rows.map(r=>{
       const lv = String(r["レベル"] || "");
       return `<option value="${escapeHTML(lv)}">Lv ${escapeHTML(lv)}</option>`;
@@ -159,10 +179,12 @@
   function renderCalc(){
     const charaId = calcCharacter.value;
     const level = calcLevel.value;
-    const jobName = calcJob.value;
-    const rows = rowsByCharacter.get(charaId) || [];
+    const jobName1 = calcJob1.value;
+    const jobName2 = calcJob2.value;
+    const rows = (rowsByCharacter.get(charaId) || []).filter(isVisibleLevelRow);
     const base = rows.find(r => String(r["レベル"]) === String(level));
-    const job = jobName ? jobsByName.get(jobName) : null;
+    const job1 = jobName1 ? jobsByName.get(jobName1) : null;
+    const job2 = jobName2 ? jobsByName.get(jobName2) : null;
 
     if (!base) {
       calcSummary.innerHTML = "";
@@ -174,10 +196,13 @@
     const cards = [];
     for (const key of primaryStats) {
       const baseValue = num(base[key]);
-      const bonus = job ? num(job[key]) : 0;
-      const total = baseValue + bonus;
-      const signed = bonus > 0 ? `+${bonus}` : `${bonus}`;
-      cards.push(statCard(key, total, `${baseValue} ${bonus ? `(${signed})` : `(±0)`}`));
+      const pct1 = job1 ? num(job1[key]) : 0;
+      const pct2 = job2 ? num(job2[key]) : 0;
+      const total = calcWithJobs(baseValue, pct1, pct2);
+      const parts = [];
+      if (job1) parts.push(`${jobName1} ${pct1 > 0 ? `+${pct1}` : pct1}%`);
+      if (job2) parts.push(`${jobName2} ${pct2 > 0 ? `+${pct2}` : pct2}%`);
+      cards.push(statCard(key, total, `${baseValue}${parts.length ? ` / ${parts.join(" / ")}` : " / 補正なし"}`));
     }
     cards.push(statCard("経験値", num(base["経験値"])));
     cards.push(statCard("次レベル", num(base["次レベル"])));
@@ -185,25 +210,32 @@
 
     const tableRows = statKeys.map((key) => {
       const baseValue = num(base[key]);
-      const bonus = job ? num(job[key]) : 0;
-      const total = baseValue + bonus;
+      const pct1 = job1 ? num(job1[key]) : 0;
+      const pct2 = job2 ? num(job2[key]) : 0;
+      const total = calcWithJobs(baseValue, pct1, pct2);
+      const bonus1 = Math.round((baseValue * pct1) / 100);
+      const bonus2 = Math.round((baseValue * pct2) / 100);
       return {
         項目: key,
-        素の値: String(baseValue),
-        補正: bonus > 0 ? `+${bonus}` : String(bonus),
+        元の値: String(baseValue),
+        1つ目補正: job1 ? `${jobName1} (${pct1 > 0 ? `+${pct1}` : pct1}%) / ${bonus1 > 0 ? `+${bonus1}` : bonus1}` : "なし",
+        2つ目補正: job2 ? `${jobName2} (${pct2 > 0 ? `+${pct2}` : pct2}%) / ${bonus2 > 0 ? `+${bonus2}` : bonus2}` : "なし",
         計算後: String(total)
       };
     });
 
     calcOut.innerHTML = makeTable(tableRows, [
       { key:"項目", label:"項目" },
-      { key:"素の値", label:"素の値" },
-      { key:"補正", label:"職業補正" },
+      { key:"元の値", label:"元の値" },
+      { key:"1つ目補正", label:"1つ目の職業" },
+      { key:"2つ目補正", label:"2つ目の職業" },
       { key:"計算後", label:"計算後" }
     ]);
 
     const charName = characterName(charaId);
-    calcNote.textContent = `${charName} / Lv ${level}${jobName ? ` / ${jobName}` : " / 職業補正なし"}`;
+    const jobText1 = jobName1 || "なし";
+    const jobText2 = jobName2 || "なし";
+    calcNote.textContent = `${charName} / Lv ${level} / 1つ目: ${jobText1} / 2つ目: ${jobText2}`;
   }
 
   async function init(){
@@ -228,11 +260,13 @@
 
     renderCharacterList();
     fillCharacterSelect();
-    fillJobSelect();
+    fillJobSelects();
     const firstId = characters[0]?.chara_id || "";
     if (firstId) {
       calcCharacter.value = firstId;
-      fillLevelSelect(firstId, rowsByCharacter.get(firstId)?.[0]?.["レベル"] || "1");
+      fillLevelSelect(firstId, (rowsByCharacter.get(firstId) || []).filter(isVisibleLevelRow)?.[0]?.["レベル"] || "1");
+      calcJob1.value = "";
+      calcJob2.value = "";
       renderCalc();
     }
   }
@@ -244,7 +278,8 @@
     renderCalc();
   });
   calcLevel.addEventListener("change", renderCalc);
-  calcJob.addEventListener("change", renderCalc);
+  calcJob1.addEventListener("change", renderCalc);
+  calcJob2.addEventListener("change", renderCalc);
 
   init().catch((err)=>{
     console.error(err);
