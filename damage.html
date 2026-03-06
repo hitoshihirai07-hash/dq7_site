@@ -11,111 +11,164 @@
   <link rel="manifest" href="./manifest.webmanifest" />
   <meta name="theme-color" content="#e8892f" />
   <meta name="description" content="DQ7Rのダメージ計算。攻撃力・守備力・倍率などからダメージ範囲を算出（耐性・乱数込み）。ボス戦の“あと何発”確認に。" />
+  <style>
+    .damage-shell{display:grid; gap:14px;}
+    .damage-grid{display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:12px; align-items:end;}
+    .damage-box{grid-column:span 12; padding:14px; border:1px solid var(--line); border-radius:14px; background:var(--panel-2,#fffaf4);}
+    .damage-box h2{margin:0 0 10px; font-size:16px;}
+    .damage-grid .field{min-width:0;}
+    .col-2{grid-column:span 2;}
+    .col-3{grid-column:span 3;}
+    .col-4{grid-column:span 4;}
+    .col-5{grid-column:span 5;}
+    .col-6{grid-column:span 6;}
+    .col-8{grid-column:span 8;}
+    .col-12{grid-column:span 12;}
+    .damage-actions{display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:flex-end;}
+    .damage-inline-note{display:flex; align-items:center; min-height:42px;}
+    .damage-result-grid{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px;}
+    .damage-result-card{padding:12px; min-width:0;}
+    .damage-result-card .num{font-size:24px; font-weight:700; line-height:1.2;}
+    .damage-subgrid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:10px;}
+    .segmented{display:flex; flex-wrap:wrap; gap:8px;}
+    .segmented .btn{padding:.55rem .8rem;}
+    @media (max-width: 980px){
+      .col-2,.col-3,.col-4,.col-5,.col-6,.col-8{grid-column:span 6;}
+      .damage-result-grid{grid-template-columns:1fr;}
+      .damage-subgrid{grid-template-columns:1fr;}
+    }
+    @media (max-width: 640px){
+      .col-2,.col-3,.col-4,.col-5,.col-6,.col-8,.col-12{grid-column:span 12;}
+      .damage-actions{justify-content:stretch;}
+      .damage-actions .btn{flex:1;}
+    }
+  </style>
 </head>
 <body>
 <main>
   <div class="card">
     <h1>ダメージ計算</h1>
 
-    <p>攻撃力・守備力・技倍率から、ダメージの範囲を計算します。</p>
-    
+    <p>攻撃力・守備力・倍率から、ダメージの範囲を計算します。</p>
 
-    <div class="toolbar">
-      <div class="row" style="gap:10px; flex-wrap:wrap;">
-        <div class="field" style="min-width:220px;">
-          <label class="small">ボス（任意）</label>
-          <select id="boss" class="select"></select>
-        </div>
-
-        <div class="field" style="min-width:160px;">
-          <label class="small">属性（任意）</label>
-          <select id="element" class="select"></select>
-        </div>
-
-        <div class="field" style="min-width:140px;">
-          <label class="small">相手耐性</label>
-          <select id="resist" class="select"></select>
-        </div>
-
-        <div class="small" id="bossInfo" style="align-self:flex-end; padding-bottom:6px;"></div>
-      </div>
-    </div>
-
-    <div class="toolbar">
-      <div class="row" style="gap:10px; flex-wrap:wrap;">
-        <div class="field" style="min-width:130px;">
-          <label class="small">攻撃力</label>
-          <input id="atk" class="input" inputmode="numeric" placeholder="例: 120" />
-        </div>
-        <div class="field" style="min-width:140px;">
-          <label class="small">攻撃上昇</label>
-          <select id="atkStage" class="select">
-            <option value="0">なし</option>
-            <option value="1">1段階</option>
-            <option value="2">2段階</option>
-          </select>
-        </div>
-
-
-        <div class="field" style="min-width:130px;">
-          <label class="small">相手守備力</label>
-          <input id="def" class="input" inputmode="numeric" placeholder="例: 80" />
-        </div>
-        <div class="field" style="min-width:140px;">
-          <label class="small">守備変化</label>
-          <select id="defStage" class="select">
-            <option value="0">なし</option>
-            <option value="-1">-1段階</option>
-            <option value="-2">-2段階</option>
-            <option value="1">+1段階</option>
-            <option value="2">+2段階</option>
-          </select>
-        </div>
-
-
-        <div class="field" style="min-width:220px;">
-          <label class="small">技（任意）</label>
-          <select id="skillSel" class="select"></select>
-        </div>
-
-        <div class="field" style="min-width:140px;">
-          <label class="small">技表示</label>
-          <select id="skillFilter" class="select">
-            <option value="mul">倍率あり</option>
-            <option value="all">すべて</option>
-          </select>
-        </div>
-
-        <div class="field" style="min-width:220px;">
-          <label class="small">武器（任意）</label>
-          <select id="weaponSel" class="select"></select>
-        </div>
-
-        <div class="field" style="min-width:140px;">
-          <label class="small">武器表示</label>
-          <select id="weaponFilter" class="select">
-            <option value="mul">倍率あり</option>
-            <option value="all">すべて</option>
-          </select>
-        </div>
-
-        <div class="field" style="min-width:130px;">
-          <label class="small">倍率</label>
-          <input id="mult" class="input" inputmode="decimal" placeholder="例: 1.00" />
-        </div>
-        <div class="field" style="min-width:140px;">
-          <label class="small">相手HP（任意）</label>
-          <input id="hp" class="input" inputmode="numeric" placeholder="例: 260" />
-        </div>
-
-        <div style="display:flex; gap:8px; align-self:flex-end; padding-bottom:2px;">
-          <button id="btnCalc" class="btn primary" type="button">計算</button>
-          <button id="btnReset" class="btn" type="button">リセット</button>
+    <div class="damage-shell">
+      <div class="damage-box">
+        <h2>対象</h2>
+        <div class="damage-grid">
+          <div class="field col-4">
+            <label class="small">ボス（任意）</label>
+            <select id="boss" class="select"></select>
+          </div>
+          <div class="field col-3">
+            <label class="small">属性（任意）</label>
+            <select id="element" class="select"></select>
+          </div>
+          <div class="field col-2">
+            <label class="small">相手耐性</label>
+            <select id="resist" class="select"></select>
+          </div>
+          <div class="field col-3">
+            <label class="small">ボスHP（任意）</label>
+            <input id="hp" class="input" inputmode="numeric" placeholder="例: 260" />
+          </div>
+          <div class="col-12 damage-inline-note small" id="bossInfo"></div>
         </div>
       </div>
-    </div>
 
-    <div id="out" style="margin-top:12px;"></div>
+      <div class="damage-box">
+        <h2>攻撃側・防御側</h2>
+        <div class="damage-grid">
+          <div class="field col-3">
+            <label class="small">攻撃力</label>
+            <input id="atk" class="input" inputmode="numeric" placeholder="例: 120" />
+          </div>
+          <div class="field col-3">
+            <label class="small">攻撃段階</label>
+            <select id="atkStage" class="select">
+              <option value="-2">-2段階</option>
+              <option value="-1">-1段階</option>
+              <option value="0" selected>なし</option>
+              <option value="1">+1段階</option>
+              <option value="2">+2段階</option>
+            </select>
+          </div>
+          <div class="field col-3">
+            <label class="small">相手守備力</label>
+            <input id="def" class="input" inputmode="numeric" placeholder="例: 80" />
+          </div>
+          <div class="field col-3">
+            <label class="small">守備段階</label>
+            <select id="defStage" class="select">
+              <option value="-2">-2段階</option>
+              <option value="-1">-1段階</option>
+              <option value="0" selected>なし</option>
+              <option value="1">+1段階</option>
+              <option value="2">+2段階</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="damage-box">
+        <h2>倍率</h2>
+        <div class="damage-grid">
+          <div class="field col-4">
+            <label class="small">技（任意）</label>
+            <select id="skillSel" class="select"></select>
+          </div>
+          <div class="field col-2">
+            <label class="small">技表示</label>
+            <select id="skillFilter" class="select">
+              <option value="mul">倍率あり</option>
+              <option value="all">すべて</option>
+            </select>
+          </div>
+          <div class="field col-4">
+            <label class="small">装備（任意）</label>
+            <select id="weaponSel" class="select"></select>
+          </div>
+          <div class="field col-2">
+            <label class="small">装備表示</label>
+            <select id="weaponFilter" class="select">
+              <option value="mul">倍率あり</option>
+              <option value="all">すべて</option>
+            </select>
+          </div>
+
+          <div class="field col-3">
+            <label class="small">基本倍率</label>
+            <input id="mult" class="input" inputmode="decimal" placeholder="例: 1.00" />
+          </div>
+          <div class="field col-3">
+            <label class="small">補助効果</label>
+            <select id="buffMode" class="select">
+              <option value="none">なし</option>
+              <option value="muscle">マッスルダンスあり</option>
+              <option value="kiai">気合いためあり</option>
+            </select>
+          </div>
+          <div class="field col-2">
+            <label class="small">補助倍率</label>
+            <input id="buffMult" class="input" inputmode="decimal" value="1.50" />
+          </div>
+          <div class="field col-2">
+            <label class="small">その他倍率</label>
+            <input id="otherMult" class="input" inputmode="decimal" value="1.00" />
+          </div>
+          <div class="field col-2">
+            <label class="small">合計倍率</label>
+            <input id="totalMult" class="input" inputmode="decimal" readonly />
+          </div>
+        </div>
+      </div>
+
+      <div class="damage-actions">
+        <button id="btnCalc" class="btn primary" type="button">計算</button>
+        <button id="btnReset" class="btn" type="button">リセット</button>
+      </div>
+
+      <div id="out"></div>
+    </div>
   </div>
 <!-- seo-block:start -->
 <div class="card">
@@ -188,6 +241,10 @@
     weaponFilter: document.getElementById("weaponFilter"),
     mult: document.getElementById("mult"),
     hp: document.getElementById("hp"),
+    buffMode: document.getElementById("buffMode"),
+    buffMult: document.getElementById("buffMult"),
+    otherMult: document.getElementById("otherMult"),
+    totalMult: document.getElementById("totalMult"),
     out: document.getElementById("out"),
     calc: document.getElementById("btnCalc"),
     reset: document.getElementById("btnReset"),
@@ -202,8 +259,8 @@
   let skills = [];
   let items = [];
 
-  const ATK_STAGE_MUL = [1, 1.25, 1.5];
-  const DEF_STAGE_MUL = { "-2": 0.5, "-1": 0.75, "0": 1, "1": 1.25, "2": 1.5 };
+  const STAGE_MUL = { "-2": 0.5, "-1": 0.75, "0": 1, "1": 1.25, "2": 1.5 };
+  const BUFF_DEFAULT_MUL = { none: 1, muscle: 1.5, kiai: 1.5 };
 
   function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
 
@@ -328,8 +385,10 @@
     const sid = (EL.skillSel.value || "").toString().trim();
     const wid = (EL.weaponSel.value || "").toString().trim();
 
-    // 何も選んでいない場合は、手入力を尊重して上書きしない
-    if (!sid && !wid) return;
+    if (!sid && !wid) {
+      updateTotalMultiplier();
+      return;
+    }
 
     const s = sid ? skills.find(x => (x.skill_id || "").toString().trim() === sid) : null;
     const w = wid ? items.find(x => (x.item_id || "").toString().trim() === wid) : null;
@@ -340,10 +399,42 @@
     const sDefined = Number.isFinite(sRaw) && sRaw > 0;
     const wDefined = Number.isFinite(wRaw) && wRaw > 0;
 
-    if (!sDefined && !wDefined) return;
+    if (sDefined || wDefined) {
+      const combined = (sDefined ? sRaw : 1) * (wDefined ? wRaw : 1);
+      EL.mult.value = Number.isFinite(combined) ? combined.toFixed(2) : "";
+    }
+    updateTotalMultiplier();
+  }
 
-    const combined = (sDefined ? sRaw : 1) * (wDefined ? wRaw : 1);
-    EL.mult.value = Number.isFinite(combined) ? combined.toFixed(2) : "";
+  function updateBuffMultiplier(){
+    if (!EL.buffMode || !EL.buffMult) return;
+    const mode = (EL.buffMode.value || 'none').toString();
+    if ((EL.buffMult.value || '').toString().trim() === '') {
+      EL.buffMult.value = Number((BUFF_DEFAULT_MUL[mode] ?? 1)).toFixed(2);
+    }
+    if (mode === 'none') EL.buffMult.value = '1.00';
+    else if (Number(EL.buffMult.value || 0) <= 1) EL.buffMult.value = Number((BUFF_DEFAULT_MUL[mode] ?? 1.5)).toFixed(2);
+    updateTotalMultiplier();
+  }
+
+  function getTotalMultiplier(){
+    const base = toNum(EL.mult?.value, 1) || 1;
+    const mode = (EL.buffMode?.value || 'none').toString();
+    const buff = mode === 'none' ? 1 : (toNum(EL.buffMult?.value, BUFF_DEFAULT_MUL[mode] ?? 1.5) || 1);
+    const other = toNum(EL.otherMult?.value, 1) || 1;
+    return {
+      base,
+      buff,
+      other,
+      total: base * buff * other,
+      mode,
+    };
+  }
+
+  function updateTotalMultiplier(){
+    if (!EL.totalMult) return;
+    const pack = getTotalMultiplier();
+    EL.totalMult.value = Number.isFinite(pack.total) ? pack.total.toFixed(2) : '';
   }
 
   function fillDefaultIfEmpty(input, value){
@@ -397,53 +488,62 @@
     EL.resist.value = key;
   }
 
-  function renderOut({ base, range, critRange, resistKey, resistMul, hits, critHits }){
+  function renderOut({ base, range, critRange, resistKey, resistMul, hits, critHits, multPack }){
     const resistLabel = RESIST_LABEL[resistKey] || "等倍";
+    const buffLabel = multPack?.mode === 'muscle' ? 'マッスルダンス' : (multPack?.mode === 'kiai' ? '気合いため' : 'なし');
 
     const showHits = (hits.best || hits.avg || hits.worst);
     const showCritHits = (critHits && (critHits.best || critHits.avg || critHits.worst));
 
     const hitsHtml = (showHits || showCritHits) ? `
-      <div class="hr"></div>
+      <div class="damage-subgrid">
+        ${showHits ? `
+        <div class="card damage-result-card">
+          <div class="small">通常で必要な回数</div>
+          <div class="row" style="gap:10px; flex-wrap:wrap; margin-top:8px;">
+            <div class="pill">最短 <b>${hits.best ?? "—"}</b></div>
+            <div class="pill">平均 <b>${hits.avg ?? "—"}</b></div>
+            <div class="pill">最長 <b>${hits.worst ?? "—"}</b></div>
+          </div>
+        </div>` : ''}
 
-      ${showHits ? `
-      <div class="row" style="gap:10px; flex-wrap:wrap;">
-        <div class="pill">通常：最短 <b>${hits.best ?? "—"}</b></div>
-        <div class="pill">平均 <b>${hits.avg ?? "—"}</b></div>
-        <div class="pill">最長 <b>${hits.worst ?? "—"}</b></div>
-      </div>` : ""}
-
-      ${showCritHits ? `
-      <div class="row" style="gap:10px; flex-wrap:wrap; margin-top:8px;">
-        <div class="pill">会心（確定）：最短 <b>${critHits.best ?? "—"}</b></div>
-        <div class="pill">平均 <b>${critHits.avg ?? "—"}</b></div>
-        <div class="pill">最長 <b>${critHits.worst ?? "—"}</b></div>
-      </div>` : ""}
-    ` : "";
+        ${showCritHits ? `
+        <div class="card damage-result-card">
+          <div class="small">会心（確定）で必要な回数</div>
+          <div class="row" style="gap:10px; flex-wrap:wrap; margin-top:8px;">
+            <div class="pill">最短 <b>${critHits.best ?? "—"}</b></div>
+            <div class="pill">平均 <b>${critHits.avg ?? "—"}</b></div>
+            <div class="pill">最長 <b>${critHits.worst ?? "—"}</b></div>
+          </div>
+        </div>` : ''}
+      </div>
+    ` : '';
 
     EL.out.innerHTML = `
-      <div class="row" style="gap:10px; flex-wrap:wrap;">
-        <div class="pill">相手耐性：<b>${escape(resistLabel)}</b></div>
+      <div class="row" style="gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+        <div class="pill">耐性：<b>${escape(resistLabel)}</b></div>
         <div class="pill">耐性倍率：<b>${Number(resistMul).toFixed(2)}</b></div>
+        <div class="pill">基本倍率：<b>${Number(multPack?.base ?? 1).toFixed(2)}</b></div>
+        <div class="pill">補助：<b>${escape(buffLabel)}</b> / <b>${Number(multPack?.buff ?? 1).toFixed(2)}</b></div>
+        <div class="pill">その他：<b>${Number(multPack?.other ?? 1).toFixed(2)}</b></div>
+        <div class="pill">合計倍率：<b>${Number(multPack?.total ?? 1).toFixed(2)}</b></div>
       </div>
 
-      <div class="hr"></div>
-
-      <div class="row" style="gap:10px; flex-wrap:wrap;">
-        <div class="card" style="padding:12px; min-width:220px; flex:1;">
+      <div class="damage-result-grid">
+        <div class="card damage-result-card">
           <div class="small">基礎ダメージ</div>
-          <div style="font-size:22px; font-weight:700;">${Math.round(base)}</div>
+          <div class="num">${Math.round(base)}</div>
         </div>
 
-        <div class="card" style="padding:12px; min-width:240px; flex:1;">
+        <div class="card damage-result-card">
           <div class="small">通常ダメージ範囲（乱数込み）</div>
-          <div style="font-size:22px; font-weight:700;">${range.min} ～ ${range.max}</div>
+          <div class="num">${range.min} ～ ${range.max}</div>
           <div class="small" style="margin-top:4px;">平均：${Math.round(range.avg)}</div>
         </div>
 
-        <div class="card" style="padding:12px; min-width:240px; flex:1;">
+        <div class="card damage-result-card">
           <div class="small">会心（確定）ダメージ範囲</div>
-          <div style="font-size:22px; font-weight:700;">${critRange.min} ～ ${critRange.max}</div>
+          <div class="num">${critRange.min} ～ ${critRange.max}</div>
           <div class="small" style="margin-top:4px;">平均：${Math.round(critRange.avg)}</div>
         </div>
       </div>
@@ -466,13 +566,14 @@
     const atk0 = toNum(EL.atk.value, 0);
     const def0 = toNum(EL.def.value, 0);
 
-    const atkStage = clamp(parseInt((EL.atkStage?.value ?? "0"), 10) || 0, 0, 2);
+    const atkStage = clamp(parseInt((EL.atkStage?.value ?? "0"), 10) || 0, -2, 2);
     const defStage = clamp(parseInt((EL.defStage?.value ?? "0"), 10) || 0, -2, 2);
 
-    const atk = atk0 * ATK_STAGE_MUL[atkStage];
-    const def = def0 * DEF_STAGE_MUL[String(defStage)];
+    const atk = atk0 * (STAGE_MUL[String(atkStage)] ?? 1);
+    const def = def0 * (STAGE_MUL[String(defStage)] ?? 1);
 
-    const mult = toNum(EL.mult.value, 1);
+    const multPack = getTotalMultiplier();
+    const mult = multPack.total;
     const resistKey = (EL.resist.value || "normal").toString().trim();
     const resistMul = getResistMul(resistKey, cfg);
 
@@ -483,7 +584,7 @@
     const hits = computeHitsToKill({ hp: EL.hp.value, dmgMin: range.min, dmgMax: range.max, dmgAvg: range.avg });
     const critHits = computeHitsToKill({ hp: EL.hp.value, dmgMin: critRange.min, dmgMax: critRange.max, dmgAvg: critRange.avg });
 
-    renderOut({ base, range, critRange, resistKey, resistMul, hits, critHits });
+    renderOut({ base, range, critRange, resistKey, resistMul, hits, critHits, multPack });
   }
 
   function resetAll(){
@@ -495,12 +596,18 @@
     if (EL.weaponSel) EL.weaponSel.value = "";
     EL.mult.value = "";
     EL.hp.value = "";
+    if (EL.buffMode) EL.buffMode.value = "none";
+    if (EL.buffMult) EL.buffMult.value = "1.00";
+    if (EL.otherMult) EL.otherMult.value = "1.00";
+    if (EL.totalMult) EL.totalMult.value = "1.00";
 
     EL.boss.value = "";
     EL.element.value = "";
     EL.resist.value = "normal";
     EL.bossInfo.textContent = "";
 
+    updateBuffMultiplier();
+    updateTotalMultiplier();
     EL.out.innerHTML = `<div class="small">入力して「計算」を押してください。</div>`;
   }
 
@@ -529,7 +636,12 @@
 
     bosses
       .slice()
-      .sort((a,b)=> (a.name||"").localeCompare((b.name||""), "ja"))
+      .sort((a,b)=>{
+        const pa = parseBossOrder(a.boss_id);
+        const pb = parseBossOrder(b.boss_id);
+        if (pa.num !== pb.num) return pa.num - pb.num;
+        return pa.suffix.localeCompare(pb.suffix, 'ja');
+      })
       .forEach(b=>{
         EL.boss.append(opt(b.boss_id, `${b.name}`));
       });
@@ -569,6 +681,8 @@
     setBossInfo();
     applyBossDefaults();
     applyResistFromBoss();
+    updateBuffMultiplier();
+    updateTotalMultiplier();
 
     EL.out.innerHTML = `<div class="small">入力して「計算」を押してください。</div>`;
 
@@ -578,6 +692,10 @@
     if (EL.weaponSel) EL.weaponSel.addEventListener("change", updateMultFromSelections);
     if (EL.skillFilter) EL.skillFilter.addEventListener("change", ()=>{ renderSkillOptions(); updateElementFromSkill(); updateMultFromSelections(); });
     if (EL.weaponFilter) EL.weaponFilter.addEventListener("change", ()=>{ renderWeaponOptions(); updateMultFromSelections(); });
+    if (EL.mult) EL.mult.addEventListener("input", updateTotalMultiplier);
+    if (EL.buffMode) EL.buffMode.addEventListener("change", updateBuffMultiplier);
+    if (EL.buffMult) EL.buffMult.addEventListener("input", updateTotalMultiplier);
+    if (EL.otherMult) EL.otherMult.addEventListener("input", updateTotalMultiplier);
 
     EL.calc.addEventListener("click", compute);
     EL.reset.addEventListener("click", resetAll);
