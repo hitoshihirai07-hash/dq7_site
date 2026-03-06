@@ -79,8 +79,18 @@
     normal: "等倍",
     half: "半減",
     immune: "無効",
-    absorb: "吸収"
+    absorb: "吸収",
+    "1": "弱点",
+    "2": "等倍",
+    "3": "軽減",
+    "4": "無効"
   };
+
+  const WIDE_RESIST_GROUPS = [
+    { title:"属性", cols:["火","氷","風","土","雷","光","闇"] },
+    { title:"能力低下", cols:["攻撃ダウン","守備ダウン","すばやさダウン"] },
+    { title:"状態異常", cols:["ニフラム","即死","眠り","混乱","魅了","マヒ","毒","幻惑","転び","笑い","うっとり","みとれ"] }
+  ];
 
   function trim(s){ return (s||"").toString().trim(); }
 
@@ -119,7 +129,7 @@
     return m;
   }
 
-  function renderResists(resistTypes, bossResists){
+  function renderLongResists(resistTypes, bossResists){
     const typeById = new Map(resistTypes.map(t=>[t.resist_type_id, t]));
 
     const enriched = bossResists.map(r=>{
@@ -163,6 +173,54 @@
       </div>`;
     }
     return html;
+  }
+
+  function renderWideResists(row){
+    if (!row) return `<div class="card"><div class="warn">耐性データは未入力です。</div></div>`;
+
+    const hasAny = WIDE_RESIST_GROUPS.some(g => g.cols.some(col => trim(row[col])));
+    if (!hasAny){
+      return `<div class="card"><div class="warn">耐性データは未入力です。</div></div>`;
+    }
+
+    let html = `<div class="card"><div class="small muted">耐性目安：1=弱点 / 2=等倍 / 3=軽減 / 4=無効</div></div>`;
+
+    for (const group of WIDE_RESIST_GROUPS){
+      const items = group.cols
+        .map((name, idx) => ({
+          name,
+          value: trim(row[name]),
+          sort: idx
+        }))
+        .filter(x => x.value !== "");
+
+      if (!items.length) continue;
+
+      html += `<div class="card">
+        <h2>${escapeHTML(group.title)}</h2>
+        <div class="table-wrap"><table>
+          <thead><tr><th>種別</th><th>耐性</th><th>数値</th></tr></thead>
+          <tbody>
+            ${items.map(it=>{
+              const label = VALUE_LABEL[it.value] || it.value || "—";
+              return `<tr>
+                <td>${escapeHTML(it.name)}</td>
+                <td><span class="chip">${escapeHTML(label)}</span></td>
+                <td>${escapeHTML(it.value)}</td>
+              </tr>`;
+            }).join("")}
+          </tbody>
+        </table></div>
+      </div>`;
+    }
+
+    return html;
+  }
+
+  function renderResists(resistTypes, bossResists, bossWideResistsMap, bossId){
+    const wideRow = bossWideResistsMap?.get(bossId);
+    if (wideRow) return renderWideResists(wideRow);
+    return renderLongResists(resistTypes, bossResists);
   }
 
   function makeRelated(mainBosses, currentGroupBase, loc){
@@ -273,7 +331,9 @@
 
     const el = (id)=>document.getElementById(id);
 
-    const resistsByBossId = groupBy(resistRows, "boss_id");
+    const isWideResistCsv = !!(resistRows[0] && !('resist_type_id' in resistRows[0]) && ('火' in resistRows[0] || '眠り' in resistRows[0]));
+    const resistsByBossId = isWideResistCsv ? new Map() : groupBy(resistRows, "boss_id");
+    const wideResistsByBossId = isWideResistCsv ? new Map(resistRows.map(r => [trim(r.boss_id), r])) : new Map();
 
     function setActive(bossId){
       const btns = document.querySelectorAll("#tabs .tabbtn");
@@ -316,7 +376,7 @@
         : `<span class="muted">—</span>`;
 
       const rs = resistsByBossId.get(b.boss_id) || [];
-      el("rightCard").innerHTML = renderResists(resistTypes, rs);
+      el("rightCard").innerHTML = renderResists(resistTypes, rs, wideResistsByBossId, b.boss_id);
 
       setActive(b.boss_id);
     }
