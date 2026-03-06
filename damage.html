@@ -59,15 +59,7 @@
             <label class="small">ボス（任意）</label>
             <select id="boss" class="select"></select>
           </div>
-          <div class="field col-3">
-            <label class="small">属性（任意）</label>
-            <select id="element" class="select"></select>
-          </div>
-          <div class="field col-2">
-            <label class="small">相手耐性</label>
-            <select id="resist" class="select"></select>
-          </div>
-          <div class="field col-3">
+          <div class="field col-8">
             <label class="small">ボスHP（任意）</label>
             <input id="hp" class="input" inputmode="numeric" placeholder="例: 260" />
           </div>
@@ -179,7 +171,7 @@
     <ul class="list">
       <li>攻撃力／相手守備力を入力</li>
       <li>技や倍率を選択（分からない場合は空欄でもOK）</li>
-      <li>耐性・段階変化が分かるなら反映して計算</li>
+      <li>攻撃・守備段階や倍率を反映して計算</li>
     </ul>
 
     <h2>関連リンク</h2>
@@ -213,10 +205,8 @@
   import { loadCSV } from "./assets/data.js";
   import { escapeHTML } from "./assets/util.js";
   import {
-    RESIST_LABEL,
     DEFAULT_DAMAGE_CONFIG,
     normalizeDamageConfig,
-    getResistMul,
     toNum,
     computeBaseDamage,
     computeDamageRange,
@@ -228,8 +218,6 @@
 
   const EL = {
     boss: document.getElementById("boss"),
-    element: document.getElementById("element"),
-    resist: document.getElementById("resist"),
     bossInfo: document.getElementById("bossInfo"),
     atk: document.getElementById("atk"),
     atkStage: document.getElementById("atkStage"),
@@ -253,8 +241,6 @@
   let cfg = DEFAULT_DAMAGE_CONFIG;
 
   let bosses = [];
-  let resistTypes = [];
-  let bossResists = [];
 
   let skills = [];
   let items = [];
@@ -264,8 +250,14 @@
 
   function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
 
+  function parseBossOrder(bossId){
+    const s = (bossId || '').toString().trim();
+    const m = s.match(/^(?:boss_)?(\d+)([A-Za-z]?)$/);
+    if (!m) return { num: Number.MAX_SAFE_INTEGER, suffix: s };
+    return { num: Number(m[1] || 0), suffix: (m[2] || '').toUpperCase() };
+  }
 
-    function opt(v, label){
+  function opt(v, label){
     const o = document.createElement("option");
     o.value = v;
     o.textContent = label;
@@ -351,35 +343,6 @@
     else EL.weaponSel.value = "";
   }
 
-  function mapElementToResistTypeId(skillElement){
-    const se = (skillElement || "").toString().trim();
-    if (!se || se === "無") return "";
-    // allow exact resist_type_id
-    if (resistTypes.find(r => (r.resist_type_id || "").toString().trim() === se)) return se;
-
-    const rt =
-      resistTypes.find(r => (r.short || "").toString().trim() === se) ||
-      resistTypes.find(r => (r.name || "").toString().includes(se)) ||
-      resistTypes.find(r => se.includes((r.short || "").toString().trim()));
-
-    return rt ? (rt.resist_type_id || "").toString().trim() : "";
-  }
-
-  function updateElementFromSkill(){
-    const sid = (EL.skillSel?.value || "").toString().trim();
-    if (!sid) return;
-    const s = skills.find(x => (x.skill_id || "").toString().trim() === sid);
-    if (!s) return;
-    const rt = mapElementToResistTypeId(s.element);
-    if (!rt) return;
-
-    // elementが未選択の時だけ自動セット（手動を尊重）
-    if (!EL.element.value){
-      EL.element.value = rt;
-      applyResistFromBoss();
-    }
-  }
-
   function updateMultFromSelections(){
     if (!EL.skillSel || !EL.weaponSel) return;
     const sid = (EL.skillSel.value || "").toString().trim();
@@ -454,11 +417,6 @@
     return bosses.find(b => (b.boss_id || "").toString() === id) || null;
   }
 
-  function bossResistValue(boss_id, resist_type_id){
-    const row = bossResists.find(r => (r.boss_id || "") === boss_id && (r.resist_type_id || "") === resist_type_id);
-    return row ? (row.value || "").toString().trim() : "";
-  }
-
   function setBossInfo(){
     const b = getSelectedBoss();
     if (!b){
@@ -476,20 +434,7 @@
     fillDefaultIfEmpty(EL.def, b.def);
   }
 
-  function applyResistFromBoss(){
-    const b = getSelectedBoss();
-    const rt = (EL.element.value || "").toString();
-    if (!b || !rt) return;
-
-    const v = bossResistValue((b.boss_id || "").toString(), rt);
-    if (!v) return;
-
-    const key = ["weak","normal","half","immune","absorb"].includes(v) ? v : "normal";
-    EL.resist.value = key;
-  }
-
-  function renderOut({ base, range, critRange, resistKey, resistMul, hits, critHits, multPack }){
-    const resistLabel = RESIST_LABEL[resistKey] || "等倍";
+  function renderOut({ base, range, critRange, hits, critHits, multPack }){
     const buffLabel = multPack?.mode === 'muscle' ? 'マッスルダンス' : (multPack?.mode === 'kiai' ? '気合いため' : 'なし');
 
     const showHits = (hits.best || hits.avg || hits.worst);
@@ -521,8 +466,6 @@
 
     EL.out.innerHTML = `
       <div class="row" style="gap:10px; flex-wrap:wrap; margin-bottom:10px;">
-        <div class="pill">耐性：<b>${escape(resistLabel)}</b></div>
-        <div class="pill">耐性倍率：<b>${Number(resistMul).toFixed(2)}</b></div>
         <div class="pill">基本倍率：<b>${Number(multPack?.base ?? 1).toFixed(2)}</b></div>
         <div class="pill">補助：<b>${escape(buffLabel)}</b> / <b>${Number(multPack?.buff ?? 1).toFixed(2)}</b></div>
         <div class="pill">その他：<b>${Number(multPack?.other ?? 1).toFixed(2)}</b></div>
@@ -574,8 +517,7 @@
 
     const multPack = getTotalMultiplier();
     const mult = multPack.total;
-    const resistKey = (EL.resist.value || "normal").toString().trim();
-    const resistMul = getResistMul(resistKey, cfg);
+    const resistMul = 1;
 
     const base = computeBaseDamage({ atk, def, mult, cfg });
     const range = computeDamageRange({ base, resistMul, cfg });
@@ -584,7 +526,7 @@
     const hits = computeHitsToKill({ hp: EL.hp.value, dmgMin: range.min, dmgMax: range.max, dmgAvg: range.avg });
     const critHits = computeHitsToKill({ hp: EL.hp.value, dmgMin: critRange.min, dmgMax: critRange.max, dmgAvg: critRange.avg });
 
-    renderOut({ base, range, critRange, resistKey, resistMul, hits, critHits, multPack });
+    renderOut({ base, range, critRange, hits, critHits, multPack });
   }
 
   function resetAll(){
@@ -602,8 +544,6 @@
     if (EL.totalMult) EL.totalMult.value = "1.00";
 
     EL.boss.value = "";
-    EL.element.value = "";
-    EL.resist.value = "normal";
     EL.bossInfo.textContent = "";
 
     updateBuffMultiplier();
@@ -617,19 +557,8 @@
     // boss dropdown
     EL.boss.append(opt("", "（ボス未選択）"));
 
-    // resist dropdown
-    for (const [k, label] of Object.entries(RESIST_LABEL)){
-      EL.resist.append(opt(k, label));
-    }
-    EL.resist.value = "normal";
-
-    // element dropdown
-    EL.element.append(opt("", "（属性なし）"));
-
-    [bosses, resistTypes, bossResists, skills, items] = await Promise.all([
+    [bosses, skills, items] = await Promise.all([
       loadCSV("./data/current/bosses.csv"),
-      loadCSV("./data/current/resist_types.csv"),
-      loadCSV("./data/current/boss_resists.csv"),
       loadCSV("./data/current/skills.csv"),
       loadCSV("./data/current/items.csv"),
     ]);
@@ -646,14 +575,6 @@
         EL.boss.append(opt(b.boss_id, `${b.name}`));
       });
 
-    resistTypes
-      .filter(r => (r.category || "") === "呪文属性")
-      .slice()
-      .sort((a,b)=> Number(a.sort_order||999) - Number(b.sort_order||999))
-      .forEach(r=>{
-        EL.element.append(opt(r.resist_type_id, `${r.short || r.name}`));
-      });
-
     // 技 dropdown（任意）
     if (EL.skillFilter) EL.skillFilter.value = (EL.skillFilter.value || "mul");
     renderSkillOptions();
@@ -665,32 +586,26 @@
     // URL params: damage.html?boss=boss_001&element=fire
     const params = new URLSearchParams(location.search);
     const bossParam = (params.get("boss") || "").toString().trim();
-    const elemParam = (params.get("element") || "").toString().trim();
     const hpParam = (params.get("hp") || "").toString().trim();
     const defParam = (params.get("def") || "").toString().trim();
 
     if (bossParam && bosses.find(b=> (b.boss_id||"") === bossParam)){
       EL.boss.value = bossParam;
     }
-    if (elemParam && resistTypes.find(r=> (r.resist_type_id||"") === elemParam)){
-      EL.element.value = elemParam;
-    }
     if (hpParam) fillDefaultIfEmpty(EL.hp, hpParam);
     if (defParam) fillDefaultIfEmpty(EL.def, defParam);
 
     setBossInfo();
     applyBossDefaults();
-    applyResistFromBoss();
     updateBuffMultiplier();
     updateTotalMultiplier();
 
     EL.out.innerHTML = `<div class="small">入力して「計算」を押してください。</div>`;
 
-    EL.boss.addEventListener("change", ()=>{ setBossInfo(); applyBossDefaults(); applyResistFromBoss(); });
-    EL.element.addEventListener("change", ()=>{ applyResistFromBoss(); });
-    if (EL.skillSel) EL.skillSel.addEventListener("change", ()=>{ updateElementFromSkill(); updateMultFromSelections(); });
+    EL.boss.addEventListener("change", ()=>{ setBossInfo(); applyBossDefaults(); });
+    if (EL.skillSel) EL.skillSel.addEventListener("change", updateMultFromSelections);
     if (EL.weaponSel) EL.weaponSel.addEventListener("change", updateMultFromSelections);
-    if (EL.skillFilter) EL.skillFilter.addEventListener("change", ()=>{ renderSkillOptions(); updateElementFromSkill(); updateMultFromSelections(); });
+    if (EL.skillFilter) EL.skillFilter.addEventListener("change", ()=>{ renderSkillOptions(); updateMultFromSelections(); });
     if (EL.weaponFilter) EL.weaponFilter.addEventListener("change", ()=>{ renderWeaponOptions(); updateMultFromSelections(); });
     if (EL.mult) EL.mult.addEventListener("input", updateTotalMultiplier);
     if (EL.buffMode) EL.buffMode.addEventListener("change", updateBuffMultiplier);
