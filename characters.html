@@ -109,7 +109,7 @@
   function norm(s){ return (s||"").toLowerCase(); }
   function num(v){
     const n = Number(v);
-    return Number.isFinite(n) ? Math.round(n) : 0;
+    return Number.isFinite(n) ? Math.floor(n) : 0;
   }
 
   function hasValue(v){
@@ -125,7 +125,7 @@
     const base = Number(baseValue || 0);
     const p1 = Number(pct1 || 0);
     const p2 = Number(pct2 || 0);
-    return Math.round(base + (base * p1) / 100 + (base * p2) / 100);
+    return base + Math.floor((base * p1) / 100) + Math.floor((base * p2) / 100);
   }
 
   let characters = [];
@@ -213,8 +213,8 @@
       const pct1 = job1 ? num(job1[key]) : 0;
       const pct2 = job2 ? num(job2[key]) : 0;
       const total = calcWithJobs(baseValue, pct1, pct2);
-      const bonus1 = Math.round((baseValue * pct1) / 100);
-      const bonus2 = Math.round((baseValue * pct2) / 100);
+      const bonus1 = Math.floor((baseValue * pct1) / 100);
+      const bonus2 = Math.floor((baseValue * pct2) / 100);
       return {
         項目: key,
         元の値: String(baseValue),
