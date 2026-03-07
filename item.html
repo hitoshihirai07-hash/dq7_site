@@ -105,8 +105,7 @@
         </p>
 
         <p>
-          <b>攻撃：</b>${disp(it.atk)}　
-          <b>防御：</b>${disp(it.def)}<br>
+          <b>上昇量：</b>${(() => { const boosts = [it.atk, it.def].map(v => (v ?? '').toString().trim()).filter(Boolean); return boosts.length ? escapeHTML(boosts.join(' / ')) : NA; })()}<br>
           <b>倍率：</b>${disp(it.damage_mul)}
         </p>
 

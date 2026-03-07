@@ -78,8 +78,7 @@
   const COLS = [
     { key:"name", label:"名前" },
     { key:"category", label:"カテゴリ" },
-    { key:"atk", label:"攻撃" },
-    { key:"def", label:"防御" },
+    { key:"boosts", label:"上昇量" },
     { key:"damage_mul", label:"倍率" },
     { key:"price_buy", label:"買値" },
     { key:"price_sell", label:"売値" },
@@ -102,6 +101,10 @@
           const subHtml = sub.length ? `<div class="small">${sub.join(" / ")}</div>` : ``;
           return `<td><a href="./item.html?id=${encodeURIComponent(id)}">${escapeHTML(name)}</a>${subHtml}</td>`;
         }
+        }
+        if (c.key === "boosts"){
+          const boosts = [r.atk, r.def].map(v => (v ?? "").toString().trim()).filter(Boolean);
+          return `<td>${escapeHTML(boosts.join(" / ") || "—")}</td>`;
         }
         if (c.key === "damage_mul"){
           const v = (r.damage_mul ?? "").toString().trim();
