@@ -76,7 +76,6 @@
 
 <script type="module">
   import { boot } from "./assets/app_common.js";
-  import { loadCSV } from "./assets/data.js";
   import { qs, escapeHTML } from "./assets/util.js";
 
   boot("【DQ7R】石板｜入手・条件の確認");
@@ -163,9 +162,51 @@
     return `<div class="table-wrap"><table>${thead}${tbody}</table></div>`;
   }
 
+  function parseCSVRows(text){
+    const rows = [];
+    let i = 0, field = '', row = [];
+    let inQuotes = false;
+    text = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+
+    while (i < text.length) {
+      const c = text[i];
+      if (inQuotes) {
+        if (c === '"') {
+          if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
+          inQuotes = false; i++; continue;
+        }
+        field += c; i++; continue;
+      }
+      if (c === '"') { inQuotes = true; i++; continue; }
+      if (c === ',') { row.push(field); field = ''; i++; continue; }
+      if (c === "\n") { row.push(field); rows.push(row); row = []; field = ''; i++; continue; }
+      field += c; i++;
+    }
+    if (field.length > 0 || row.length > 0) { row.push(field); rows.push(row); }
+    return rows;
+  }
+
+  async function loadTablets(){
+    const res = await fetch("./data/current/tablets.csv", { cache: "no-store" });
+    if (!res.ok) throw new Error(`データ読込失敗: ./data/current/tablets.csv (${res.status})`);
+    const text = await res.text();
+    const rows = parseCSVRows(text);
+    if (!rows.length) return [];
+
+    return rows.slice(1)
+      .filter(cols => cols.some(v => (v || '').trim() !== ''))
+      .map((cols, idx) => ({
+        _id: idx + 1,
+        area: (cols[0] || '').trim(),
+        color: (cols[1] || '').trim(),
+        era: (cols[2] || '').trim(),
+        location: (cols[3] || '').trim(),
+        how: (cols[4] || '').trim(),
+      }));
+  }
+
   async function main(){
-    const raw = await loadCSV("./data/current/tablets.csv");
-    const tablets = raw.map((r, idx) => ({ ...r, _id: idx + 1 }));
+    const tablets = await loadTablets();
 
     const areas = Array.from(new Set(tablets.map(r => (r.area || "").trim()).filter(Boolean)));
     AREA.innerHTML = `<option value="all">エリア: 全て</option>` + areas.map(a => `<option value="${escapeHTML(a)}">${escapeHTML(a)}</option>`).join("");
