@@ -45,28 +45,64 @@
   </section>
 
   <section class="card">
-    <h2>発売・DLC情報</h2>
-    <ul class="list">
-      <li><b>発売日</b>：2026/2/5(木)（Steam版のみ 2026/2/6(金)）</li>
-      <li><b>アーリーアクセス</b>：デジタルデラックス版は発売48時間前から（2026/2/4(水) 2:00開始予定）</li>
-      <li><b>追加DLC3点セット</b>：闘技場「伝説への道」／DQXI勇者一行なりきり衣装セット／冒険お役立ちもりもり福袋（特典：白オオカミのきぐるみ）</li>
-      <li><b>先行プレイ版</b>：セーブデータを製品版へ引き継ぎ可（同一アカウント・同一端末）。特典あり。</li>
-    </ul>
-    <div class="small">※公式発表を元に記載。詳細は公式サイトで確認してください。</div>
+    <h2>このサイトで確認できること</h2>
+    <p>このサイトは、攻略中に迷いやすい情報を<b>一覧で見比べて、必要ならそのまま次の確認ページへ進める</b>形に寄せています。読むだけのまとめではなく、検索・絞り込み・計算までまとめて使う前提です。</p>
+
+    <div class="status-grid" style="margin-top:10px;">
+      <div class="status-card">
+        <div class="status-label">ボス</div>
+        <div class="status-value" id="statBosses">-</div>
+        <div class="status-sub">一覧＋詳細＋計算導線</div>
+      </div>
+      <div class="status-card">
+        <div class="status-label">職業</div>
+        <div class="status-value" id="statJobs">-</div>
+        <div class="status-sub">条件・習得・ルート確認</div>
+      </div>
+      <div class="status-card">
+        <div class="status-label">呪文/特技</div>
+        <div class="status-value" id="statSkills">-</div>
+        <div class="status-sub">属性・用途で比較</div>
+      </div>
+      <div class="status-card">
+        <div class="status-label">アイテム</div>
+        <div class="status-value" id="statItems">-</div>
+        <div class="status-sub">用途・入手メモ確認</div>
+      </div>
+      <div class="status-card">
+        <div class="status-label">取り逃しQ&A</div>
+        <div class="status-value" id="statMissables">-</div>
+        <div class="status-sub">損しないための確認</div>
+      </div>
+      <div class="status-card">
+        <div class="status-label">その他</div>
+        <div class="status-value" id="statOther">-</div>
+        <div class="status-sub">メダル・石板・強モンスター</div>
+      </div>
+    </div>
+
+    <div class="small" style="margin-top:10px;">※収録数は公開中の確認ページから集計しています。詳細な方針は <a href="./about.html">このサイトについて</a> にまとめています。</div>
   </section>
 </section>
 
 <!-- grouped links inserted -->
 <!-- seo-block:start -->
 <section class="card">
-    <h2>DQ7Rを“最短で確認”するデータベース</h2>
-    <p>攻略中に「これ何だっけ？」となったとき、<b>検索と絞り込みで一発</b>で確認できるように、ボス／職業／呪文／特技／アイテム／キャラクターを整理しています。迷ったら、まずは取り逃しQ&Aで“損しないチェック”だけ先に済ませるのがおすすめです。</p>
+    <h2>DQ7Rを“いま必要な情報だけ”確認するためのデータベース</h2>
+    <p>このサイトは、ストーリー全文や感想記事を広く置く形ではなく、<b>攻略中に実際に見返す情報</b>に絞って整理しています。名前だけでは探しにくい要素も、検索語・場所・用途・入手メモから逆引きできるようにしています。</p>
 
     <h2>よく使われる3つの導線</h2>
     <ul class="list">
       <li><b>ボス戦で詰まった</b>：ボス一覧 → 詳細 → 「このボスでダメージ計算」</li>
-      <li><b>転職/育成を整理したい</b>：職業一覧で絞り込み → 習得・条件を確認</li>
-      <li><b>作業系を時短したい</b>：ラッキーパネルで景品/盤面をサクッとメモ</li>
+      <li><b>転職/育成を整理したい</b>：職業一覧で絞り込み → 習得・条件 → 必要ならダメージ計算</li>
+      <li><b>取り逃しを避けたい</b>：取り逃しQ&A → アイテム/メダル/石板へ移動して確認</li>
+    </ul>
+
+    <h2>このサイトの見方</h2>
+    <ul class="list">
+      <li><b>上部の用語検索</b>：ページをまたいで探したいときに使います。</li>
+      <li><b>各一覧ページの検索欄</b>：名前だけでなく、場所・用途・メモでも絞り込めます。</li>
+      <li><b>詳細ページと計算ページ</b>：一覧で候補を見つけたあと、次の判断までつなげるための導線です。</li>
     </ul>
 
     <h2>主要ページ</h2>
@@ -82,7 +118,7 @@
       <a class="btn" href="./missables.html">取り逃しQ&A</a>
     </div>
 
-    <div class="small" style="margin-top:10px;">本編クリアまでの範囲を優先して整備し、クリア後／追加要素は必要に応じて反映します。</div>
+    <div class="small" style="margin-top:10px;">本編クリアまでの範囲を優先して整備し、必要に応じて公開中の情報を見直して更新します。</div>
   </section>
 <!-- seo-block:end -->
 </main>
@@ -104,7 +140,44 @@
 
 <script type="module">
   import { boot } from "./assets/app_common.js";
+  import { loadCSV } from "./assets/data.js";
+
   boot("DQ7R データベース｜ボス・職業・呪文/特技・アイテム検索＆計算");
+
+  const setText = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = String(value);
+  };
+
+  async function fillStats(){
+    try{
+      const [bosses, jobs, skills, items, missables, medals, tablets, strong] = await Promise.all([
+        loadCSV("./data/current/bosses.csv"),
+        loadCSV("./data/current/jobs.csv"),
+        loadCSV("./data/current/skills.csv"),
+        loadCSV("./data/current/items.csv"),
+        loadCSV("./data/current/missables_qa.csv"),
+        loadCSV("./data/current/medals.csv"),
+        loadCSV("./data/current/tablets.csv"),
+        loadCSV("./data/current/strong_monster.csv")
+      ]);
+      setText("statBosses", bosses.length);
+      setText("statJobs", jobs.length);
+      setText("statSkills", skills.length);
+      setText("statItems", items.length);
+      setText("statMissables", missables.length);
+      setText("statOther", medals.length + tablets.length + strong.length);
+    }catch(_err){
+      setText("statBosses", "-");
+      setText("statJobs", "-");
+      setText("statSkills", "-");
+      setText("statItems", "-");
+      setText("statMissables", "-");
+      setText("statOther", "-");
+    }
+  }
+
+  fillStats();
 </script>
 </body>
 </html>
